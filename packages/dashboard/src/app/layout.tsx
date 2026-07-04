@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
+
+// Self-hosted Inter (no Google Fonts CDN call). Exposed as a CSS variable so the
+// landing styles can reference it; also applied as the default body font.
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const title = "Hive — AI agents that hire AI agents";
 const description =
@@ -37,7 +47,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         <Providers>{children}</Providers>
       </body>

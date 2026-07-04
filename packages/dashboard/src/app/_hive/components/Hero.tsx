@@ -18,13 +18,13 @@ export function Hero() {
   return (
     <section className="flex flex-col lg:block lg:h-[calc(100vh-100px)] z-10 w-full relative">
       {/* Headline block */}
-      <div className="order-1 flex flex-col lg:py-0 lg:absolute lg:top-0 lg:right-[38%] lg:bottom-[6%] lg:left-[28%] lg:pr-12 lg:pl-12 z-20 pointer-events-none pt-20 pr-12 pb-12 pl-12 relative justify-center">
-        <h1 className="sm:text-7xl md:text-8xl lg:text-[4rem] xl:text-[5.7rem] leading-[0.9] lg:leading-[0.8] lg:text-left text-6xl font-medium text-white tracking-tighter text-center mix-blend-normal">
+      <div className="order-1 flex flex-col min-h-[62vh] lg:min-h-0 lg:py-0 lg:absolute lg:top-0 lg:right-[38%] lg:bottom-[6%] lg:left-[28%] lg:pr-12 lg:pl-12 z-20 pointer-events-none pt-14 px-6 pb-8 lg:pt-0 relative justify-center">
+        <h1 className="text-[3.25rem] sm:text-7xl md:text-8xl lg:text-[4rem] xl:text-[5.7rem] leading-[0.95] lg:leading-[0.95] lg:text-left font-medium text-white tracking-tighter text-center mix-blend-normal">
           <span className="block animate-reveal delay-100">Agents</span>
           <span className="block text-white/40 lg:ml-[1em] animate-reveal delay-200">Hiring</span>
           <span className="block text-white/80 animate-reveal delay-300">Agents</span>
         </h1>
-        <div className="flex animate-reveal delay-500 lg:justify-start lg:pl-2 lg:mt-24 pointer-events-auto mt-12 pl-2 gap-x-6 gap-y-6 items-center justify-center">
+        <div className="flex flex-col sm:flex-row animate-reveal delay-500 lg:justify-start lg:pl-2 lg:mt-24 pointer-events-auto mt-10 gap-4 sm:gap-x-6 items-center justify-center">
           <button className="group flex items-center gap-3 pl-6 pr-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-full transition-all">
             <span className="text-sm font-medium">Enter the Hive</span>
             <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-black group-hover:scale-110 transition-transform">
@@ -72,7 +72,7 @@ export function Hero() {
       </div>
 
       {/* Image panel */}
-      <div className="relative order-3 w-full h-64 sm:h-80 lg:absolute lg:left-[62%] lg:right-[6%] lg:top-0 lg:h-[62%] lg:border-l lg:w-auto border-white/10 overflow-hidden group animate-reveal delay-200">
+      <div className="relative order-3 w-full h-80 sm:h-96 lg:absolute lg:left-[62%] lg:right-[6%] lg:top-0 lg:h-[62%] lg:border-l lg:w-auto border-white/10 overflow-hidden group animate-reveal delay-200">
         <div className="absolute top-0 bottom-0 left-[-1px] w-[1px] overflow-hidden z-20 hidden lg:block">
           <div className="beam-v" style={{ animation: "4s ease 0s infinite normal none running beam-v" }} />
         </div>

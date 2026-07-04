@@ -1,6 +1,6 @@
-import Script from "next/script";
 import "./_hive/hive.css";
 
+import { IconifyRuntime } from "./_hive/components/IconifyRuntime";
 import { UnicornBackground } from "./_hive/components/UnicornBackground";
 import { GlobalGrid } from "./_hive/components/GlobalGrid";
 import { Navbar } from "./_hive/components/Navbar";
@@ -17,11 +17,8 @@ import { Footer } from "./_hive/components/Footer";
 export default function HiveLanding() {
   return (
     <div className="hive-root min-h-screen overflow-x-hidden selection:bg-purple-500 selection:text-white">
-      {/* Iconify web component runtime — powers the solar:* / simple-icons:* glyphs */}
-      <Script src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js" strategy="afterInteractive" />
-      {/* Inter for the landing typography */}
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+      {/* Iconify web-component runtime (installed from npm, not a CDN). */}
+      <IconifyRuntime />
 
       <UnicornBackground />
       <GlobalGrid />
