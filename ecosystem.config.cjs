@@ -17,11 +17,11 @@ module.exports = {
   apps: [
     {
       name: "hive-indexer",
-      // Uses Node's built-in node:sqlite (stable in Node 22.5+); tsx runs the TS.
-      // No --experimental-sqlite flag: it's unrecognized on some Node builds and
-      // unnecessary on 22.5+. Requires Node 22+.
-      script: "node",
-      args: "--disable-warning=ExperimentalWarning --import tsx packages/indexer/src/index.ts",
+      // Run via the package's own start script so tsx resolves from the indexer
+      // package (pnpm's strict node_modules doesn't hoist it to the repo root).
+      // Uses node:sqlite (stable in Node 22.5+) — requires Node 22+.
+      script: "pnpm",
+      args: "indexer",
       cwd: __dirname,
       autorestart: true,
       max_restarts: 20,
