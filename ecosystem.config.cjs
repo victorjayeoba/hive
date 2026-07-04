@@ -17,12 +17,14 @@ module.exports = {
   apps: [
     {
       name: "hive-indexer",
-      // Run via the package script (which now uses `tsx` directly — the reliable
-      // pattern, same as the swarm). node:sqlite is stable in Node 22.5+.
-      // NODE_NO_WARNINGS silences the node:sqlite experimental notice.
-      script: "pnpm",
-      args: "indexer",
+      // Run tsx directly (not via `pnpm`, which re-runs a deps/supply-chain check
+      // on every launch and loops). Resolve tsx from the indexer package. Run
+      // from the repo root so the .env at the root is loaded. node:sqlite is
+      // stable in Node 22.5+; NODE_NO_WARNINGS silences its experimental notice.
+      script: "node_modules/.bin/tsx",
+      args: "packages/indexer/src/index.ts",
       cwd: __dirname,
+      interpreter: "none",
       autorestart: true,
       max_restarts: 20,
       restart_delay: 3000,
@@ -30,14 +32,16 @@ module.exports = {
     },
     {
       name: "hive-swarm",
-      // The requester + worker agents. Give the chain/indexer a head start.
-      script: "pnpm",
-      args: "swarm",
+      // The requester + worker agents. Run tsx directly (not via `pnpm`, which
+      // re-checks deps/supply-chain on every launch).
+      script: "node_modules/.bin/tsx",
+      args: "scripts/run-swarm.ts",
       cwd: __dirname,
+      interpreter: "none",
       autorestart: true,
       max_restarts: 20,
       restart_delay: 5000,
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
     },
   ],
 };
