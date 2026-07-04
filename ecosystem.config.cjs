@@ -12,19 +12,32 @@
  *   - swarm   : the autonomous agents (1 requester + 3 workers)
  *
  * Both read config from the repo-root .env, so set that up first (see DEPLOY.md).
+ *
+ * We run the apps by launching node with tsx as a loader, resolving tsx's real
+ * path via require.resolve so it works regardless of how pnpm laid out
+ * node_modules (the .bin/tsx location varies by pnpm version and OS). Running
+ * tsx directly (not via `pnpm <script>`) avoids pnpm re-checking deps /
+ * supply-chain policy on every launch, which was crash-looping the processes.
  */
+const { createRequire } = require("node:module");
+const path = require("node:path");
+
+// tsx ships an ESM loader entry; resolve it from any package that depends on tsx.
+const req = createRequire(path.join(__dirname, "packages/indexer/package.json"));
+const tsxLoader = req.resolve("tsx/esm"); // e.g. .../tsx/dist/loader.mjs
+
+// node --import <tsx loader> lets plain `node` run TypeScript.
+const nodeArgs = `--import ${tsxLoader}`;
+
 module.exports = {
   apps: [
     {
       name: "hive-indexer",
-      // Run tsx directly (not via `pnpm`, which re-runs a deps/supply-chain check
-      // on every launch and loops). Resolve tsx from the indexer package. Run
-      // from the repo root so the .env at the root is loaded. node:sqlite is
-      // stable in Node 22.5+; NODE_NO_WARNINGS silences its experimental notice.
-      script: "node_modules/.bin/tsx",
-      args: "packages/indexer/src/index.ts",
+      // node:sqlite is stable in Node 22.5+; NODE_NO_WARNINGS hides its notice.
+      script: "packages/indexer/src/index.ts",
       cwd: __dirname,
-      interpreter: "none",
+      interpreter: "node",
+      interpreter_args: nodeArgs,
       autorestart: true,
       max_restarts: 20,
       restart_delay: 3000,
@@ -32,12 +45,11 @@ module.exports = {
     },
     {
       name: "hive-swarm",
-      // The requester + worker agents. Run tsx directly (not via `pnpm`, which
-      // re-checks deps/supply-chain on every launch).
-      script: "node_modules/.bin/tsx",
-      args: "scripts/run-swarm.ts",
+      // The requester + worker agents (1 requester + 3 workers).
+      script: "scripts/run-swarm.ts",
       cwd: __dirname,
-      interpreter: "none",
+      interpreter: "node",
+      interpreter_args: nodeArgs,
       autorestart: true,
       max_restarts: 20,
       restart_delay: 5000,
