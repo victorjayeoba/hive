@@ -1,0 +1,27 @@
+{
+  "name": "@hive/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./worker": "./src/worker.ts",
+    "./requester": "./src/requester.ts",
+    "./seed": "./src/seed.ts",
+    "./dev": "./src/dev.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "worker": "tsx src/index.ts worker",
+    "requester": "tsx src/index.ts requester"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@hive/shared": "workspace:*",
+    "viem": "^2.21.54"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

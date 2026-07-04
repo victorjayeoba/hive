@@ -1,0 +1,20 @@
+{
+  "name": "@hive/indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-sqlite --disable-warning=ExperimentalWarning --import tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hive/shared": "workspace:*",
+    "viem": "^2.21.54",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

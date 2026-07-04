@@ -1,0 +1,17 @@
+{
+  "name": "@hive/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "deploy:contracts": "tsx script/deploy.ts",
+    "export-abi": "tsx script/export-abi.ts"
+  },
+  "devDependencies": {
+    "@hive/shared": "workspace:*",
+    "tsx": "^4.19.2",
+    "viem": "^2.21.54"
+  }
+}

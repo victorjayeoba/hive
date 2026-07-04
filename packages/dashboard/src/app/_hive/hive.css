@@ -1,0 +1,183 @@
+/* ============================================================================
+   Hive — landing page styles
+   Custom styles that Tailwind utilities can't express: the animated grid,
+   traveling light beams, corner markers, reveal-on-load, and the two marquees.
+   ========================================================================== */
+
+.hive-root {
+  /* Vertical grid guides: percentages of viewport width (match the hero rail
+     edges at 6% / 28% / 62% / 94%). */
+  --gx-1: 6%;
+  --gx-2: 28%;
+  --gx-3: 62%;
+  --gx-4: 94%;
+  /* Horizontal grid guides, anchored to the hero so the global grid lines land
+     on the section's real splits.
+     - gy-1: content top   = 100px (below the nav)
+     - gy-2: mid split     = 62% of the content area — the left rail's inner
+             divider and the right-column cards all sit on this line
+     - gy-3: bottom split  = 94% of the content area (panels end at bottom-[6%]). */
+  --gy-1: 100px;
+  --gy-2: calc(100px + 0.62 * (100vh - 100px));
+  --gy-3: calc(100px + 0.94 * (100vh - 100px));
+
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background-color: #0a051e;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.hive-root ::selection {
+  background-color: rgb(168 85 247);
+  color: #fff;
+}
+
+/* --- Global grid & corner markers ---------------------------------------- */
+.grid-line-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 0;
+}
+.grid-line-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 0;
+}
+.marker {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background-color: white;
+  z-index: 30;
+  opacity: 0;
+  animation: fade-in 0.5s ease-out 1s forwards;
+}
+
+/* --- Reveal-on-load ------------------------------------------------------- */
+@keyframes reveal-up {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  99.9% {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    /* Release the clip entirely once revealed so glyph descenders (g, y, p…)
+       are never cut by the tight line-height boxes. */
+    clip-path: none;
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.animate-reveal {
+  opacity: 0;
+  animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.delay-100 {
+  animation-delay: 0.1s;
+  transition-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+  transition-delay: 0.2s;
+}
+.delay-300 {
+  animation-delay: 0.3s;
+  transition-delay: 0.3s;
+}
+.delay-500 {
+  animation-delay: 0.5s;
+  transition-delay: 0.5s;
+}
+
+/* --- Traveling light beams ------------------------------------------------ */
+@keyframes beam-h {
+  0% {
+    left: -200px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+@keyframes beam-v {
+  0% {
+    top: -200px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.beam-h {
+  position: absolute;
+  height: 1px;
+  width: 200px;
+  background: linear-gradient(90deg, transparent, #a855f7, transparent);
+  z-index: 10;
+  opacity: 0;
+}
+.beam-v {
+  position: absolute;
+  width: 1px;
+  height: 200px;
+  background: linear-gradient(180deg, transparent, #a855f7, transparent);
+  z-index: 10;
+  opacity: 0;
+}
+
+/* --- Marquees ------------------------------------------------------------- */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-scroll 30s linear infinite;
+  will-change: transform;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+.animate-marquee-slow {
+  animation: marquee-scroll 80s linear infinite;
+}
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}

@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# contracts (foundry)
+packages/contracts/out/
+packages/contracts/cache/
+packages/contracts/broadcast/
+packages/contracts/lib/
+
+# indexer
+packages/indexer/*.db
+packages/indexer/*.db-*
+packages/indexer/*.sqlite
+
+# off-chain store
+.hive-store/
+
+# next
+packages/dashboard/.next/
+packages/dashboard/out/
+
+# misc
+*.log
+.DS_Store
+
+# local scratch / references (not part of the project)
+.ref/

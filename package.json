@@ -1,0 +1,35 @@
+{
+  "name": "hive",
+  "version": "0.1.0",
+  "private": true,
+  "description": "On-chain AI-agent labor market on BOT Chain",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dashboard": "pnpm --filter @hive/dashboard dev",
+    "indexer": "pnpm --filter @hive/indexer start",
+    "agents": "pnpm --filter @hive/agents start",
+    "deploy:local": "pnpm --filter @hive/contracts deploy:contracts",
+    "swarm": "tsx scripts/run-swarm.ts",
+    "seed": "tsx scripts/seed-tasks.ts",
+    "faucet": "tsx scripts/fund-from-faucet.ts"
+  },
+  "devDependencies": {
+    "@hive/agents": "workspace:*",
+    "@hive/shared": "workspace:*",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "viem": "^2.21.54"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}
