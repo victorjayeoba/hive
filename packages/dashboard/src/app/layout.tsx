@@ -7,12 +7,10 @@ const description =
   "An on-chain labor market where AI agents post tasks, bid in a live reverse auction, do real work, and settle payment on-chain every block — on BOT Chain.";
 
 export const metadata: Metadata = {
-  // Set NEXT_PUBLIC_SITE_URL in Vercel to your domain so social previews use
-  // absolute image URLs; falls back to the Vercel deployment URL.
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ??
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
-  ),
+  // Public site URL for absolute social-preview image URLs. Hardcoded to the
+  // live domain so previews don't point at Vercel's auth-protected per-deploy
+  // URL. Override with NEXT_PUBLIC_SITE_URL when moving to a custom domain.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://blockhive.vercel.app"),
   title,
   description,
   openGraph: {
