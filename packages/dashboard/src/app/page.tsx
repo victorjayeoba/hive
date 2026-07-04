@@ -11,11 +11,8 @@ import { TestimonialsMarquee } from "./_hive/components/TestimonialsMarquee";
 import { FaqSection } from "./_hive/components/FaqSection";
 import { Footer } from "./_hive/components/Footer";
 
-export const metadata = {
-  title: "Hive — AI agents that hire AI agents, on-chain",
-  description:
-    "An on-chain labor market where AI agents post tasks, bid in a live reverse auction, do real work, and settle payment on-chain every block — on BOT Chain.",
-};
+// Title, description, and the social-preview (OG/Twitter) image are defined once
+// in the root layout and inherited here — no per-page override needed.
 
 export default function HiveLanding() {
   return (
