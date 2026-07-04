@@ -1,0 +1,57 @@
+/* ============================================================================
+   Hive dashboard — the live market view. Same palette as the landing:
+   violet = structure, amber = value/settled. Dark, on-chain, alive.
+   ========================================================================== */
+
+.hive-dash {
+  --bg: #07060f;
+  --panel: #0e0a1f;
+  --panel-2: #120d26;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+
+  --violet: #7c4dff;
+  --violet-soft: #c9a2ff;
+  --amber: #f5b841;
+
+  --text: #ededf4;
+  --text-dim: #8b8aa3;
+  --text-faint: #565575;
+
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 60% at 80% -10%, rgba(124, 77, 255, 0.1), transparent 60%),
+    var(--bg);
+  color: var(--text);
+}
+
+.hive-dash ::selection {
+  background: var(--amber);
+  color: #1a1206;
+}
+
+/* live status dot pulse */
+@keyframes dash-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(52, 229, 176, 0.5);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 0 5px rgba(52, 229, 176, 0);
+  }
+}
+.dash-pulse {
+  animation: dash-pulse 1.6s ease-in-out infinite;
+}
+
+/* connecting spinner */
+@keyframes dash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.dash-spin {
+  animation: dash-spin 0.9s linear infinite;
+}
