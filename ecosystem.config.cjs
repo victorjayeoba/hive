@@ -17,16 +17,16 @@ module.exports = {
   apps: [
     {
       name: "hive-indexer",
-      // Run via the package's own start script so tsx resolves from the indexer
-      // package (pnpm's strict node_modules doesn't hoist it to the repo root).
-      // Uses node:sqlite (stable in Node 22.5+) — requires Node 22+.
+      // Run via the package script (which now uses `tsx` directly — the reliable
+      // pattern, same as the swarm). node:sqlite is stable in Node 22.5+.
+      // NODE_NO_WARNINGS silences the node:sqlite experimental notice.
       script: "pnpm",
       args: "indexer",
       cwd: __dirname,
       autorestart: true,
       max_restarts: 20,
       restart_delay: 3000,
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
     },
     {
       name: "hive-swarm",
