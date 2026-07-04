@@ -38,7 +38,7 @@ pnpm swarm                         # terminal 3: requester + 3 workers
 pnpm dashboard                     # terminal 4: live dashboard on :3000
 ```
 
-Real LLM work needs `ANTHROPIC_API_KEY` in `.env`. To exercise the full on-chain
+Real LLM work needs `OPENAI_API_KEY` in `.env`. To exercise the full on-chain
 loop without a key, prefix the swarm with `MOCK_LLM=1` (dev-only, disclosed).
 
 The swarm auto-enables 1s interval mining on local Anvil so block-based bid/deadline

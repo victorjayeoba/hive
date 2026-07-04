@@ -14,7 +14,7 @@ Vercel (dashboard)  ──HTTPS/WSS──►  nginx  ──►  indexer :4000  �
 
 Three backend pieces:
 
-- **Contracts** — HiveMarket + Reputation. Deployed **once** (viem script, no Foundry needed on the VPS).
+- **Contracts** — HiveMarket + Reputation. Compiled with Foundry, deployed **once** (viem script).
 - **Indexer** — chain events → SQLite → `GET /snapshot` + WebSocket on `:4000`. Long-running.
 - **Swarm** — 1 requester + 3 worker agents, running the market. Long-running.
 
@@ -33,28 +33,32 @@ Look these up at `dev-docs.botchain.ai` / `scan.botchain.ai` (do **not** guess):
 - `BLOCK_TIME_MS` — ~750 per the PRD
 - Faucet URL — to fund the 4 agent wallets (`faucet.botchain.ai`)
 
-You also need an `ANTHROPIC_API_KEY` for real worker LLM calls.
+You also need an `OPENAI_API_KEY` for real worker LLM calls.
 
 ---
 
 ## 1. VPS prep (Ubuntu assumed)
 
 ```bash
-# Node 20+ (via nvm or nodesource)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# Node 20+ — use nvm (avoids Ubuntu shipping an old Node 18 without npm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install 20 && nvm use 20
+node -v      # MUST be v20.x (node:sqlite in the indexer needs 20+)
 
 # pnpm + pm2
 npm i -g pnpm pm2
+
+# Foundry — needed to COMPILE the contracts (the deploy reads the forge artifact)
+curl -L https://foundry.paradigm.xyz | bash
+source ~/.bashrc && foundryup
+forge --version
 
 # clone + install
 git clone https://github.com/victorjayeoba/hive.git
 cd hive
 pnpm install
 ```
-
-> No Foundry needed — the deploy script is viem-based (`tsx`). Only install
-> Foundry if you want to run `forge test`.
 
 ---
 
@@ -82,8 +86,8 @@ WORKER_2_PRIVATE_KEY=0x...
 WORKER_3_PRIVATE_KEY=0x...
 
 # --- LLM ---
-ANTHROPIC_API_KEY=sk-ant-...
-LLM_MODEL=claude-haiku-4-5-20251001
+OPENAI_API_KEY=sk-...
+LLM_MODEL=gpt-4o-mini
 
 # --- Indexer ---
 INDEXER_PORT=4000
@@ -99,9 +103,13 @@ INDEXER_PORT=4000
 ## 3. Deploy the contracts (once)
 
 ```bash
-pnpm --filter @hive/shared build   # compile shared ABIs/types first
-pnpm deploy:local                  # despite the name, deploys to whatever RPC_URL points at
+pnpm --filter @hive/shared build   # compile shared ABIs/types
+pnpm deploy:local                  # compiles HiveMarket (forge) then deploys to RPC_URL
 ```
+
+> `deploy:local` runs `forge build --skip test` first, so Foundry must be
+> installed (step 1). `--skip test` avoids needing `forge-std` (only the test
+> file uses it; the contracts themselves have no external deps).
 
 This deploys HiveMarket and **writes `HIVE_MARKET_ADDRESS` + `DEPLOY_BLOCK` back
 into `.env`** automatically. Confirm the address printed matches `.env`.

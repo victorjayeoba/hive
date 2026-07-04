@@ -15,8 +15,8 @@
     "requester": "tsx src/index.ts requester"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.68.0",
     "@hive/shared": "workspace:*",
+    "openai": "^4.104.0",
     "viem": "^2.21.54"
   },
   "devDependencies": {

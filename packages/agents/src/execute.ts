@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 // A task the requester publishes off-chain; only its hashes go on-chain.
 export interface TaskSpec {
@@ -7,28 +7,27 @@ export interface TaskSpec {
   input: string;
 }
 
-const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
+const model = process.env.LLM_MODEL ?? "gpt-4o-mini";
 
-function client(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set — worker cannot perform real work");
-  return new Anthropic({ apiKey });
+function client(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not set — worker cannot perform real work");
+  return new OpenAI({ apiKey });
 }
 
 /// Performs the genuine task with a real model call. The returned string is what
 /// gets shown in the UI; its keccak hash is what lands on-chain.
 export async function execute(spec: TaskSpec): Promise<string> {
   // Dev-only: exercise the full on-chain loop without an API key. Never used in a
-  // submission run — real work requires ANTHROPIC_API_KEY. Clearly disclosed.
+  // submission run — real work requires OPENAI_API_KEY. Clearly disclosed.
   if (process.env.MOCK_LLM === "1") return mockResult(spec);
 
-  const response = await client().messages.create({
+  const response = await client().chat.completions.create({
     model,
     max_tokens: 512,
     messages: [{ role: "user", content: `${spec.prompt}\n\n---\n${spec.input}` }],
   });
-  const text = response.content.find((b) => b.type === "text");
-  return text && text.type === "text" ? text.text.trim() : "";
+  return response.choices[0]?.message?.content?.trim() ?? "";
 }
 
 function mockResult(spec: TaskSpec): string {

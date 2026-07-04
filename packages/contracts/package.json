@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "forge build",
+    "build": "forge build --skip test",
     "test": "forge test",
-    "deploy:contracts": "tsx script/deploy.ts",
+    "deploy:contracts": "forge build --skip test && tsx script/deploy.ts",
     "export-abi": "tsx script/export-abi.ts"
   },
   "devDependencies": {
