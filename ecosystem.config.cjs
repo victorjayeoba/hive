@@ -17,9 +17,11 @@ module.exports = {
   apps: [
     {
       name: "hive-indexer",
-      // Node's built-in SQLite needs the experimental flag; tsx runs the TS directly.
+      // Uses Node's built-in node:sqlite (stable in Node 22.5+); tsx runs the TS.
+      // No --experimental-sqlite flag: it's unrecognized on some Node builds and
+      // unnecessary on 22.5+. Requires Node 22+.
       script: "node",
-      args: "--experimental-sqlite --disable-warning=ExperimentalWarning --import tsx packages/indexer/src/index.ts",
+      args: "--disable-warning=ExperimentalWarning --import tsx packages/indexer/src/index.ts",
       cwd: __dirname,
       autorestart: true,
       max_restarts: 20,

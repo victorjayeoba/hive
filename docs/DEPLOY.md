@@ -43,8 +43,8 @@ You also need an `OPENAI_API_KEY` for real worker LLM calls.
 # Node 20+ — use nvm (avoids Ubuntu shipping an old Node 18 without npm)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install 20 && nvm use 20
-node -v      # MUST be v20.x (node:sqlite in the indexer needs 20+)
+nvm install 22 && nvm use 22
+node -v      # MUST be v22.x (node:sqlite in the indexer needs 22+)
 
 # pnpm + pm2
 npm i -g pnpm pm2
@@ -226,8 +226,10 @@ pm2 save && pm2 startup
   `NEXT_PUBLIC_INDEXER_WS` uses `wss://` (not `ws://`).
 - **Swarm not posting** → check `pm2 logs hive-swarm`; usually unfunded keys or a
   wrong `HIVE_MARKET_ADDRESS`. Re-run the deploy step and confirm `.env`.
-- **`node:sqlite` error** → needs Node 20+ with the `--experimental-sqlite` flag,
-  which the PM2 config already passes.
+- **`bad option: --experimental-sqlite` / indexer crash-loops** → you're on Node
+  20. The indexer's `node:sqlite` needs **Node 22+**. Run `nvm install 22 && nvm
+  use 22 && nvm alias default 22`, then `npm i -g pnpm pm2`, `pnpm install`, and
+  `pm2 restart hive-indexer`.
 - **Mixed-content / CORS in browser console** → you're on `ws://`/`http://` from an
   HTTPS page. Must be `wss://`/`https://` (step 5).
 ```
