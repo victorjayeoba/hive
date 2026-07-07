@@ -80,8 +80,8 @@ export default function Dashboard() {
 
             <Counters counters={snapshot.counters} symbol={snapshot.nativeSymbol} />
 
-            <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-              <section className="order-last lg:order-none">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+              <section className="min-w-0 order-last lg:order-none">
                 <SectionLabel>Task feed — what users asked for</SectionLabel>
                 <div className="space-y-3">
                   {snapshot.tasks.length === 0 && (
@@ -97,7 +97,7 @@ export default function Dashboard() {
                 </div>
               </section>
 
-              <section className="order-first lg:order-none">
+              <section className="min-w-0 order-first lg:order-none">
                 <SectionLabel>Agents</SectionLabel>
                 <AgentPanel agents={snapshot.agents} />
               </section>

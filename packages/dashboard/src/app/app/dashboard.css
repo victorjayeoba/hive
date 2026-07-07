@@ -19,6 +19,10 @@
   --text-faint: #565575;
 
   min-height: 100vh;
+  /* Safety net: never let any child (agent scroll-row, long hash, wide table)
+     push the whole page sideways on mobile. Horizontal scroll belongs inside
+     specific containers (the agents row), not the page. */
+  overflow-x: hidden;
   background:
     radial-gradient(120% 60% at 80% -10%, rgba(124, 77, 255, 0.1), transparent 60%),
     var(--bg);
