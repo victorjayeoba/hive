@@ -10,6 +10,7 @@ import { TaskCard } from "@/components/TaskCard";
 import { AgentPanel } from "@/components/AgentPanel";
 import { AppHeader } from "@/components/AppHeader";
 import { ActivityMarquee } from "@/components/ActivityMarquee";
+import { PostTaskModal } from "@/components/PostTaskModal";
 import "./dashboard.css";
 
 // Ambient block ticker — a viem read-only client polling the chain head.
@@ -19,7 +20,7 @@ export default function Dashboard() {
   const query = useLiveSnapshot();
   const snapshot = useHiveStore((s) => s.snapshot);
   const connected = useHiveStore((s) => s.connected);
-  const [posting, setPosting] = useState(false);
+  const [showPost, setShowPost] = useState(false);
   const [liveBlock, setLiveBlock] = useState<number>();
 
   useEffect(() => {
@@ -40,14 +41,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  async function postTask() {
-    setPosting(true);
-    try {
-      await fetch("/api/post-task", { method: "POST" });
-    } finally {
-      setPosting(false);
-    }
-  }
 
   return (
     <div className="hive-dash">
@@ -77,11 +70,10 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-3">
               <ConnectionPill connected={connected} />
               <button
-                onClick={postTask}
-                disabled={posting}
-                className="shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors disabled:opacity-50"
+                onClick={() => setShowPost(true)}
+                className="shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors"
               >
-                {posting ? "posting…" : "Post task"}
+                Post task
               </button>
             </div>
 
@@ -112,6 +104,8 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {showPost && <PostTaskModal onClose={() => setShowPost(false)} />}
 
       {/* Iconify runtime, in case components use it */}
       <Script

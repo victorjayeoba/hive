@@ -25,10 +25,19 @@ async function publishToStore(specHash: string, inputHash: string, spec: object,
 
 // Lets a judge post a real task live from the dashboard. Uses the requester key
 // server-side; posts a genuine task on-chain (the swarm picks it up from there).
-export async function POST() {
+export async function POST(req: Request) {
   const key = process.env.REQUESTER_PRIVATE_KEY as `0x${string}` | undefined;
   if (!key || !marketAddress) {
     return NextResponse.json({ error: "requester key or market address not configured" }, { status: 500 });
+  }
+
+  // Accept a user-composed task { prompt, input }. Falls back to a demo task so
+  // the one-click button still works. Body is optional and tolerant of no JSON.
+  let body: { prompt?: string; input?: string } = {};
+  try {
+    body = (await req.json()) as { prompt?: string; input?: string };
+  } catch {
+    /* no body — use the demo task below */
   }
 
   // Surface the exact missing/failing config instead of throwing a blank 500.
@@ -45,13 +54,17 @@ export async function POST() {
     );
   }
 
-  const spec = {
-    kind: "summarize",
-    prompt: "Summarize the following text in one sentence of at most 20 words.",
-    input:
-      "Hive is the market for AI work on BOT Chain: you ask for on-chain analysis, worker agents " +
-      "compete in a reverse auction to deliver the cheapest correct answer, and every result settles on-chain.",
-  };
+  const DEMO_PROMPT = "Summarize the following text in one sentence of at most 20 words.";
+  const DEMO_INPUT =
+    "Hive is the market for AI work on BOT Chain: you ask for on-chain analysis, worker agents " +
+    "compete in a reverse auction to deliver the cheapest correct answer, and every result settles on-chain.";
+
+  const prompt = (body.prompt ?? "").trim() || DEMO_PROMPT;
+  const input = (body.input ?? "").trim() || DEMO_INPUT;
+  if (prompt.length > 2000 || input.length > 4000) {
+    return NextResponse.json({ error: "prompt or input too long" }, { status: 400 });
+  }
+  const spec = { kind: "summarize", prompt, input };
 
   const specHash = keccak256(toHex(JSON.stringify({ kind: spec.kind, prompt: spec.prompt })));
   const inputHash = keccak256(toHex(spec.input));
