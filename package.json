@@ -12,14 +12,17 @@
     "deploy:local": "pnpm --filter @hive/contracts deploy:contracts",
     "swarm": "tsx scripts/run-swarm.ts",
     "seed": "tsx scripts/seed-tasks.ts",
-    "faucet": "tsx scripts/fund-from-faucet.ts"
+    "faucet": "tsx scripts/fund-from-faucet.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@hive/agents": "workspace:*",
     "@hive/shared": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "viem": "^2.21.54"
+    "viem": "^2.21.54",
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=20"
