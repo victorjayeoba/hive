@@ -5,6 +5,10 @@
 //
 // Run: HIVE_TELEGRAM_TOKEN=... pnpm --filter @hive/telegram start
 
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { config as loadEnv } from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
 import {
   assessWalletRisk,
@@ -16,6 +20,20 @@ import {
 } from "@hive/mcp-tools/tools";
 import { getMarketStats, getTaskStatus, postTask } from "@hive/mcp-tools/market";
 import { publishTask, getContent } from "@hive/mcp-tools/content";
+
+// Load the repo-root .env (walking up) so HIVE_TELEGRAM_TOKEN + the requester key
+// are available when PM2 starts this without an inline env.
+(function loadRootEnv() {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 6; i++) {
+    const candidate = resolve(dir, ".env");
+    if (existsSync(candidate)) {
+      loadEnv({ path: candidate });
+      return;
+    }
+    dir = dirname(dir);
+  }
+})();
 
 const token = process.env.HIVE_TELEGRAM_TOKEN;
 if (!token) {

@@ -55,5 +55,19 @@ module.exports = {
       restart_delay: 5000,
       env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
     },
+    {
+      name: "hive-telegram",
+      // The human front-door: /risk, /analyze, /explain, /hire, etc.
+      // Only starts if HIVE_TELEGRAM_TOKEN is set (from @BotFather); otherwise it
+      // exits immediately and PM2 leaves it stopped.
+      script: "packages/telegram/src/index.ts",
+      cwd: __dirname,
+      interpreter: "node",
+      interpreter_args: nodeArgs,
+      autorestart: true,
+      max_restarts: 20,
+      restart_delay: 5000,
+      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
+    },
   ],
 };

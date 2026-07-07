@@ -116,11 +116,14 @@ export async function postTask(args: {
   bidWindow?: number;
   workWindow?: number;
 }): Promise<PostResult | { error: string }> {
-  const key = process.env.HIVE_REQUESTER_KEY as `0x${string}` | undefined;
+  // Reuse the requester key already in .env (the one that deployed the contract),
+  // or a dedicated HIVE_REQUESTER_KEY if you'd rather use a separate wallet.
+  const key = (process.env.HIVE_REQUESTER_KEY ??
+    process.env.REQUESTER_PRIVATE_KEY) as `0x${string}` | undefined;
   if (!key) {
     return {
       error:
-        "HIVE_REQUESTER_KEY not set — needed to sign + fund the task. Set it to a funded BOT Chain key to post tasks.",
+        "No requester key — set REQUESTER_PRIVATE_KEY (or HIVE_REQUESTER_KEY) to a funded BOT Chain key to post tasks.",
     };
   }
   const account = privateKeyToAccount(key);
