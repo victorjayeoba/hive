@@ -73,6 +73,7 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
   const [showClaude, setShowClaude] = useState(false);
 
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
       <div className="mx-auto max-w-6xl flex items-center justify-between gap-3 px-4 py-3.5">
         <Link href="/" className="flex shrink-0 items-center gap-2">
@@ -121,8 +122,11 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
           <WalletButton />
         </div>
       </div>
-      {showClaude && <ClaudeConnectModal onClose={() => setShowClaude(false)} />}
     </header>
+    {/* Rendered OUTSIDE the sticky header so its z-index isn't trapped in the
+        header's stacking context (which made the popup appear behind the page). */}
+    {showClaude && <ClaudeConnectModal onClose={() => setShowClaude(false)} />}
+    </>
   );
 }
 
@@ -136,11 +140,11 @@ function ClaudeConnectModal({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative mt-10 w-full max-w-md rounded-md border border-[var(--line-strong)] bg-[var(--panel)] p-5 text-[var(--text)] shadow-2xl"
+        className="relative mt-2 w-full max-w-md rounded-md border border-[var(--line-strong)] bg-[var(--panel)] p-5 text-[var(--text)] shadow-2xl sm:mt-6"
       >
         <button
           onClick={onClose}
