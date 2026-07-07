@@ -65,12 +65,19 @@ export async function POST(req: Request) {
   if (prompt.length > 2000 || input.length > 4000) {
     return NextResponse.json({ error: "prompt or input too long" }, { status: 400 });
   }
-  // User-composed tasks use the generic "text" kind: the worker runs it through the
-  // LLM (execute() routes unknown kinds to textTask) AND the v1 verifier accepts it
-  // (its default case is permissive). The old code forced kind "summarize", so a
-  // non-summary result was longer than its input, failed verify(), and got rejected
-  // → refunded even though the work was correct. The demo task stays "summarize".
-  const kind = hasCustom ? "text" : "summarize";
+  // Route the task to the RIGHT worker handler based on its input, so the agent
+  // uses real BOT Chain data instead of a generic "I can't access data" LLM reply:
+  //   - a 0x tx hash (64 hex)  → "explain-tx"     (decodes the real tx on-chain)
+  //   - a 0x address (40 hex)  → "analyze-wallet" (pulls real wallet risk data)
+  //   - otherwise              → "text"           (plain LLM task)
+  // The empty-form demo stays "summarize". execute() dispatches on these kinds and
+  // the v1 verifier accepts them.
+  function detectKind(text: string): string {
+    if (/0x[a-fA-F0-9]{64}/.test(text)) return "explain-tx";
+    if (/0x[a-fA-F0-9]{40}/.test(text)) return "analyze-wallet";
+    return "text";
+  }
+  const kind = hasCustom ? detectKind(`${prompt} ${input}`) : "summarize";
   const spec = { kind, prompt, input };
 
   const specHash = keccak256(toHex(JSON.stringify({ kind: spec.kind, prompt: spec.prompt })));
