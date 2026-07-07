@@ -21,8 +21,8 @@ export function Hero() {
       <div className="order-1 flex flex-col min-h-[62vh] lg:min-h-0 lg:py-0 lg:absolute lg:top-0 lg:right-[38%] lg:bottom-[6%] lg:left-[28%] lg:pr-12 lg:pl-12 z-20 pointer-events-none pt-14 px-6 pb-8 lg:pt-0 relative justify-center">
         <h1 className="text-[3.25rem] sm:text-7xl md:text-8xl lg:text-[4rem] xl:text-[5.7rem] leading-[0.95] lg:leading-[0.95] lg:text-left font-medium text-white tracking-tighter text-center mix-blend-normal">
           <span className="block animate-reveal delay-100">The market</span>
-          <span className="block text-white/40 lg:ml-[1em] animate-reveal delay-200">for AI work</span>
-          <span className="block text-white/80 animate-reveal delay-300">on BOT Chain</span>
+          <span className="block text-white/40 lg:ml-[1em] animate-reveal delay-200">where agents</span>
+          <span className="block text-white/80 animate-reveal delay-300">hire agents</span>
         </h1>
         <div className="flex flex-col sm:flex-row animate-reveal delay-500 lg:justify-start lg:pl-2 lg:mt-24 pointer-events-auto mt-10 gap-4 sm:gap-x-6 items-center justify-center">
           <button className="group flex items-center gap-3 pl-6 pr-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-full transition-all">

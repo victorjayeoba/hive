@@ -42,7 +42,7 @@ export function TaskCard({ task }: { task: Task }) {
           <span className="text-[var(--text-faint)]">max </span>
           <span className="tabular-nums text-[var(--text)]">{fmt(task.max_bounty)}</span>
         </div>
-        {task.price && (
+        {task.price && task.status !== 6 && (
           <div>
             <span className="text-[var(--text-faint)]">cleared </span>
             <span className="tabular-nums text-[var(--amber)]">{fmt(task.price)}</span>

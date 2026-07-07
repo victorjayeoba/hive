@@ -67,6 +67,17 @@ db.exec(`
   );
 `);
 
+// One bid tx emits exactly one BidPlaced event, so tx_hash uniquely identifies a
+// bid. Older DBs used a plain INSERT with no constraint, so an indexer restart /
+// re-scan could insert the same bid many times (a task showing 25 identical bids).
+// Purge any existing duplicates (keep the first rowid per tx_hash) and enforce a
+// UNIQUE index so replays become harmless no-ops via INSERT OR IGNORE.
+db.exec(`
+  DELETE FROM bids
+  WHERE rowid NOT IN (SELECT MIN(rowid) FROM bids GROUP BY tx_hash);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_bids_tx ON bids(tx_hash);
+`);
+
 // Wipe the projection if the deployed market address changed (fresh deploy), so a
 // new contract never shows stale tasks from a previous run.
 export function resetIfNewDeployment(marketAddress: string): void {

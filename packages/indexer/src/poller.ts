@@ -66,7 +66,9 @@ export function startPoller(onChange: () => void) {
         recordTx(tx, "post", undefined, block);
         break;
       case "BidPlaced":
-        db.prepare("INSERT INTO bids (task_id, worker, price, tx_hash, block) VALUES (?, ?, ?, ?, ?)")
+        // Idempotent by tx_hash: a bid tx emits exactly one BidPlaced, so replaying
+        // the same event (indexer restart / re-scan) must not duplicate the row.
+        db.prepare("INSERT OR IGNORE INTO bids (task_id, worker, price, tx_hash, block) VALUES (?, ?, ?, ?, ?)")
           .run(num(a.id), str(a.worker), str(a.price), tx, num(block));
         recordTx(tx, "bid", undefined, block);
         break;

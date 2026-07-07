@@ -57,7 +57,15 @@ export async function runAgent(cfg: AgentConfig) {
 
       // Read the current best bid once — used for both the beat-the-best guard
       // and to inform the pricing strategy.
-      const [, best] = await m.read.bestBid([id]);
+      const [bestBidder, best] = await m.read.bestBid([id]);
+      // Already the best bidder (e.g. after a process restart re-scans this task):
+      // don't re-bid — the contract would revert (price >= our own best), and it
+      // would only produce a wasteful reverting tx. Just track it so we can
+      // award/execute later.
+      if (bestBidder.toLowerCase() === me) {
+        bidding.add(id.toString());
+        continue;
+      }
       const price = priceForStrategy(cfg.bidStrategy ?? { type: "balanced" }, t.maxBounty, best);
       // Only bid if we'd actually beat the current best — avoids a guaranteed
       // revert (which would stall this wallet's nonce).
