@@ -1,26 +1,34 @@
 import { Icon } from "./Icon";
 import { BeeLogo } from "./BeeLogo";
 
-const COLUMNS = [
+const REPO = "https://github.com/victorjayeoba/hive";
+const EXPLORER = "https://scan.bohr.life";
+
+type FLink = { label: string; href: string; external?: boolean; status?: boolean };
+
+const COLUMNS: { title: string; links: FLink[] }[] = [
   {
     title: "Protocol",
     links: [
-      { label: "How it works" },
-      { label: "The lifecycle" },
-      { label: "Live dashboard", status: true },
-      { label: "Explorer" },
+      { label: "How it works", href: "#how-it-works" },
+      { label: "Live dashboard", href: "/app", status: true },
+      { label: "Explorer", href: EXPLORER, external: true },
+      { label: "BOT Chain", href: "https://www.botchain.ai/", external: true },
     ],
   },
   {
     title: "Project",
-    links: [{ label: "PRD" }, { label: "Tech spec" }, { label: "Build plan" }, { label: "GitHub" }],
+    links: [
+      { label: "GitHub", href: REPO, external: true },
+      { label: "Developer docs", href: "https://dev-docs.botchain.ai/docs/", external: true },
+      { label: "Faucet", href: "https://faucet.botchain.ai/basic", external: true },
+    ],
   },
 ];
 
-const SOCIALS = [
-  { icon: "simple-icons:x", label: "Twitter" },
-  { icon: "simple-icons:github", label: "GitHub" },
-  { icon: "simple-icons:discord", label: "Discord" },
+const SOCIALS: { icon: string; label: string; href: string }[] = [
+  { icon: "simple-icons:x", label: "Twitter", href: "https://x.com/BOTChain_ai" },
+  { icon: "simple-icons:github", label: "GitHub", href: REPO },
 ];
 
 export function Footer() {
@@ -43,7 +51,11 @@ export function Footer() {
               <ul className="space-y-4">
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <a href="#" className="flex items-center text-sm text-white/60 hover:text-white transition-colors">
+                    <a
+                      href={l.href}
+                      {...(l.external ? { target: "_blank", rel: "noreferrer" } : {})}
+                      className="flex items-center text-sm text-white/60 hover:text-white transition-colors"
+                    >
                       {l.label}
                       {l.status && <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 ml-2" />}
                     </a>
@@ -59,7 +71,12 @@ export function Footer() {
             <ul className="space-y-4">
               {SOCIALS.map((s) => (
                 <li key={s.label}>
-                  <a href="#" className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                  >
                     <Icon icon={s.icon} className="text-xs" /> {s.label}
                   </a>
                 </li>
@@ -70,12 +87,13 @@ export function Footer() {
           {/* Contact cards */}
           <div className="lg:col-span-4 flex flex-col sm:flex-row gap-4 lg:justify-end">
             {[
-              { kicker: "Live", label: "Open Dashboard" },
-              { kicker: "Source", label: "View on GitHub" },
+              { kicker: "Live", label: "Open Dashboard", href: "/app", external: false },
+              { kicker: "Source", label: "View on GitHub", href: REPO, external: true },
             ].map((c) => (
               <a
                 key={c.label}
-                href="#"
+                href={c.href}
+                {...(c.external ? { target: "_blank", rel: "noreferrer" } : {})}
                 className="group flex flex-col justify-between p-6 w-full sm:w-48 h-32 border border-white/10 hover:bg-white/[0.03] hover:border-white/20 transition-all rounded-sm"
               >
                 <div className="w-full flex justify-end">
@@ -94,8 +112,8 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
           <p className="text-xs text-white/30">Hive · an on-chain agent labor market. Built for the BOT Chain Builder Challenge.</p>
           <div className="flex gap-6">
-            <a href="#" className="text-xs text-white/30 hover:text-white transition-colors">BOT Chain</a>
-            <a href="#" className="text-xs text-white/30 hover:text-white transition-colors">Explorer</a>
+            <a href="https://www.botchain.ai/" target="_blank" rel="noreferrer" className="text-xs text-white/30 hover:text-white transition-colors">BOT Chain</a>
+            <a href={EXPLORER} target="_blank" rel="noreferrer" className="text-xs text-white/30 hover:text-white transition-colors">Explorer</a>
           </div>
         </div>
       </div>

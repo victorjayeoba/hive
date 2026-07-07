@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { BeeLogo } from "./BeeLogo";
 
-const LINKS = ["Protocol", "How it works", "BOT Chain", "Docs"];
+// Real destinations. Internal anchors scroll to sections on this page; external
+// links open BOT Chain resources in a new tab.
+const LINKS: { label: string; href: string; external?: boolean }[] = [
+  { label: "Protocol", href: "#how-it-works" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "BOT Chain", href: "https://www.botchain.ai/", external: true },
+  { label: "Docs", href: "https://dev-docs.botchain.ai/docs/", external: true },
+];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -19,8 +26,13 @@ export function Navbar() {
 
         <div className="hidden md:flex uppercase text-sm font-medium text-white/60 gap-x-8 items-center">
           {LINKS.map((l) => (
-            <a key={l} href="#" className="hover:text-white transition-colors">
-              {l}
+            <a
+              key={l.label}
+              href={l.href}
+              {...(l.external ? { target: "_blank", rel: "noreferrer" } : {})}
+              className="hover:text-white transition-colors"
+            >
+              {l.label}
             </a>
           ))}
         </div>
@@ -58,12 +70,13 @@ export function Navbar() {
         <nav className="flex flex-col gap-8 text-2xl font-medium tracking-tight">
           {LINKS.map((l) => (
             <a
-              key={l}
-              href="#"
+              key={l.label}
+              href={l.href}
+              {...(l.external ? { target: "_blank", rel: "noreferrer" } : {})}
               onClick={() => setOpen(false)}
               className="hover:text-purple-400 transition-colors border-b border-white/10 pb-4"
             >
-              {l}
+              {l.label}
             </a>
           ))}
         </nav>

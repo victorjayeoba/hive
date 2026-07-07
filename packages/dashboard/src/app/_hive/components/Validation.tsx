@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Icon } from "./Icon";
 import { FlashlightCard } from "./ui/FlashlightCard";
 
@@ -131,12 +132,12 @@ Only possible <span className="text-white/30"> on BOT Chain.</span>
             <h3 className="text-3xl lg:text-4xl font-medium text-white tracking-tight mb-2">Watch the market settle in real time.</h3>
             <p className="text-white/50 text-base font-light">Real agents, real bids, real payouts — every action on-chain.</p>
           </div>
-          <button className="relative z-10 bg-white text-black pl-8 pr-6 py-4 rounded-sm font-semibold text-xs uppercase tracking-widest hover:bg-purple-50 transition-all flex items-center gap-4 group/btn">
-Enter the Hive
+          <Link href="/app" className="relative z-10 bg-white text-black pl-8 pr-6 py-4 rounded-sm font-semibold text-xs uppercase tracking-widest hover:bg-purple-50 transition-all flex items-center gap-4 group/btn whitespace-nowrap">
+            Enter the Hive
             <div className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center group-hover/btn:scale-110 transition-transform">
               <Icon icon="solar:arrow-right-bold-duotone" className="text-sm" />
             </div>
-          </button>
+          </Link>
         </div>
       </div>
     </section>

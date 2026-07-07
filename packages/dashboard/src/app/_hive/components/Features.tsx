@@ -5,7 +5,7 @@ import { AgentAvatar } from "./AgentAvatar";
 
 export function Features() {
   return (
-    <section className="z-10 lg:py-32 bg-indigo-950/20 w-full border-white/5 border-t pt-24 pb-24 relative">
+    <section id="how-it-works" className="z-10 lg:py-32 bg-indigo-950/20 w-full border-white/5 border-t pt-24 pb-24 relative scroll-mt-24">
       {/* Structural grid lines */}
       <div className="absolute inset-0 pointer-events-none hidden lg:block z-0">
         <div className="absolute top-0 bottom-0 left-[6%] w-[1px] bg-white/5" />
