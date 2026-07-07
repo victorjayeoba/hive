@@ -1,8 +1,40 @@
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { saveExecKeyCipher, loadExecKeyCipher } from "./db.js";
 
-// In-memory store of execution keys, keyed by public address. Keys live ONLY in
-// this runtime process — never persisted to the DB or sent to the browser.
+// Fast in-process cache of execution keys. Backed by an ENCRYPTED DB table so
+// keys survive an indexer restart (see db.ts exec_keys). A restart wipes this
+// Map, but getExecKey() transparently decrypts from the DB on a cold miss.
 const execKeys = new Map<string, `0x${string}`>();
+
+// 32-byte AES key derived from a server secret. Set EXEC_KEY_SECRET in the
+// environment; without it we fall back to REQUESTER_PRIVATE_KEY so a single-VPS
+// deploy still works, but a dedicated secret is strongly recommended.
+function encKey(): Buffer {
+  const secret = process.env.EXEC_KEY_SECRET ?? process.env.REQUESTER_PRIVATE_KEY;
+  if (!secret) throw new Error("set EXEC_KEY_SECRET (or REQUESTER_PRIVATE_KEY) to encrypt exec keys");
+  return createHash("sha256").update(secret).digest();
+}
+
+function encrypt(plaintext: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encKey(), iv);
+  const enc = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString("hex")}:${tag.toString("hex")}:${enc.toString("hex")}`;
+}
+
+function decrypt(blob: string): string {
+  const [ivHex, tagHex, dataHex] = blob.split(":");
+  const decipher = createDecipheriv("aes-256-gcm", encKey(), Buffer.from(ivHex, "hex"));
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  return Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()]).toString("utf8");
+}
+
+// Test-only: exercise the decrypt path directly (restart-recovery regression).
+export function __decryptForTest(blob: string): string {
+  return decrypt(blob);
+}
 
 export function generateExecWallet(): { address: string; privateKey: `0x${string}` } {
   const privateKey = generatePrivateKey();
@@ -10,16 +42,31 @@ export function generateExecWallet(): { address: string; privateKey: `0x${string
   return { address, privateKey };
 }
 
+// Returns the exec key from the in-process cache, or decrypts it from the DB
+// (populating the cache) — so it works even after a restart.
 export function getExecKey(address: string): `0x${string}` | undefined {
-  return execKeys.get(address.toLowerCase());
+  const lc = address.toLowerCase();
+  const cached = execKeys.get(lc);
+  if (cached) return cached;
+  const cipher = loadExecKeyCipher(lc);
+  if (!cipher) return undefined;
+  try {
+    const key = decrypt(cipher) as `0x${string}`;
+    execKeys.set(lc, key);
+    return key;
+  } catch {
+    return undefined; // wrong secret / corrupt — treat as unavailable
+  }
 }
 
 export function rememberExecKey(address: string, privateKey: `0x${string}`): void {
-  execKeys.set(address.toLowerCase(), privateKey);
+  const lc = address.toLowerCase();
+  execKeys.set(lc, privateKey);
+  saveExecKeyCipher(lc, encrypt(privateKey)); // persist encrypted so it survives restarts
 }
 
 // Called by the /agents POST handler. Generates a wallet, funds it from the
-// faucet key, remembers the key in-process, and returns the public address.
+// faucet key, persists the encrypted key, and returns the public address.
 export async function provisionExecWallet(_agent: { name: string; ownerAddress: string }): Promise<string> {
   const { address, privateKey } = generateExecWallet();
   rememberExecKey(address, privateKey);

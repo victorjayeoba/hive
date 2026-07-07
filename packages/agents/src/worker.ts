@@ -23,7 +23,12 @@ export interface AgentConfig {
 export async function runAgent(cfg: AgentConfig) {
   const m = market(cfg.execKey);
   const me = m.account.address.toLowerCase();
-  let cursor = await m.client.getBlockNumber();
+  const startBlock = await m.client.getBlockNumber();
+  let cursor = startBlock;
+  // Recovery scan starts a lookback window behind the current head so a freshly
+  // (re)started agent finds tasks it won shortly before starting. ~2000 blocks
+  // ≈ 25min at 0.75s/block — comfortably longer than any bid+work window.
+  let recoverFrom = startBlock > 2000n ? startBlock - 2000n : 0n;
   const bidding = new Set<string>();
   const working = new Set<string>();
   const pollMs = cfg.pollMs ?? 1000;
@@ -94,6 +99,30 @@ export async function runAgent(cfg: AgentConfig) {
         void doWork(id);
       }
     }
+
+    // Recovery: after a process restart the in-memory `bidding` set is empty, so a
+    // task this agent already WON (status Awarded) would otherwise never get
+    // submitted → it sits at Awarded and times out into a refund. Scan Awarded
+    // events for tasks awarded to us that we haven't started working, and run them.
+    try {
+      const awarded = await m.client.getContractEvents({
+        address: m.address, abi: hiveMarketAbi,
+        eventName: "Awarded", fromBlock: recoverFrom, toBlock: head,
+      });
+      for (const e of awarded) {
+        const worker = String(e.args.worker ?? "").toLowerCase();
+        if (worker !== me) continue;
+        const idStr = String(e.args.id);
+        if (working.has(idStr)) continue;
+        const t = await m.read.getTask([BigInt(idStr)]);
+        if (t.status === Status.Awarded && t.worker.toLowerCase() === me) {
+          working.add(idStr);
+          console.log(`[${cfg.label}] recovering awarded task ${idStr} (submitting)`);
+          void doWork(BigInt(idStr));
+        }
+      }
+      recoverFrom = head + 1n;
+    } catch { /* transient RPC error — retry next tick */ }
 
     if (head >= cursor) cursor = head + 1n;
   }

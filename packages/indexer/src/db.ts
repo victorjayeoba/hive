@@ -65,7 +65,34 @@ db.exec(`
     created_at     INTEGER NOT NULL,
     created_sig    TEXT
   );
+
+  -- Encrypted execution-wallet private keys, so user agents survive an indexer
+  -- restart (the in-memory Map is lost on restart; without this a winning agent
+  -- can never submit its work → task stuck at AWARDED → refund). Ciphertext only;
+  -- decryptable solely with the server-side EXEC_KEY_SECRET.
+  CREATE TABLE IF NOT EXISTS exec_keys (
+    exec_address TEXT PRIMARY KEY,
+    ciphertext   TEXT NOT NULL,
+    created_at   INTEGER NOT NULL
+  );
 `);
+
+// --- Encrypted exec-key persistence -----------------------------------------
+
+export function saveExecKeyCipher(execAddress: string, ciphertext: string): void {
+  db.prepare("INSERT OR REPLACE INTO exec_keys (exec_address, ciphertext, created_at) VALUES (?, ?, ?)").run(
+    execAddress.toLowerCase(),
+    ciphertext,
+    Date.now(),
+  );
+}
+
+export function loadExecKeyCipher(execAddress: string): string | undefined {
+  const r = db.prepare("SELECT ciphertext FROM exec_keys WHERE exec_address = ?").get(execAddress.toLowerCase()) as
+    | { ciphertext: string }
+    | undefined;
+  return r?.ciphertext;
+}
 
 // One bid tx emits exactly one BidPlaced event, so tx_hash uniquely identifies a
 // bid. Older DBs used a plain INSERT with no constraint, so an indexer restart /
