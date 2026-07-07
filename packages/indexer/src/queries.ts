@@ -1,10 +1,78 @@
 import { db } from "./db.js";
+import { listUserAgents } from "./db.js";
 import { txUrl, chainConfig } from "@hive/shared";
+
+export interface RosterAgent {
+  address: string;
+  name: string;
+  role: "user-agent" | "worker" | "requester";
+  completed: number;
+  timedOut: number;
+  disputed: number;
+  earned: string;
+  reliability: number; // 0..100
+  liveStatus: string;  // "idle" | "bidding #N" | "working #N"
+  owner?: string;
+  payout?: string;
+}
+
+// Deterministic display name from an address when the agent isn't user-named.
+function generatedName(address: string): string {
+  const palette = ["Amber", "Cobalt", "Jade", "Coral", "Onyx", "Slate", "Rust", "Ivory"];
+  let n = 0;
+  try { n = Number(BigInt(address) % BigInt(palette.length)); } catch { n = address.length % palette.length; }
+  const suffix = address.slice(-2);
+  return `Worker ${palette[n]}-${suffix}`;
+}
+
+export function buildRoster(): RosterAgent[] {
+  const tasks = db.prepare("SELECT id, worker, status FROM tasks").all() as { id: number; worker: string | null; status: number }[];
+  const bids = db.prepare("SELECT DISTINCT worker, task_id FROM bids").all() as { worker: string; task_id: number }[];
+  const rep = db.prepare("SELECT * FROM agents").all() as { address: string; completed: number; timed_out: number; disputed: number; earned: string }[];
+  const users = listUserAgents();
+
+  const addrs = new Set<string>();
+  bids.forEach((b) => addrs.add(b.worker.toLowerCase()));
+  rep.forEach((r) => addrs.add(r.address.toLowerCase()));
+  users.forEach((u) => addrs.add(u.execAddress.toLowerCase()));
+
+  function liveStatus(addr: string): string {
+    const working = tasks.find((t) => t.worker?.toLowerCase() === addr && (t.status === 3 || t.status === 4));
+    if (working) return `working #${working.id}`;
+    const biddingTask = bids.find(
+      (b) => b.worker.toLowerCase() === addr && tasks.find((t) => t.id === b.task_id && t.status === 2),
+    );
+    if (biddingTask) return `bidding #${biddingTask.task_id}`;
+    return "idle";
+  }
+
+  return [...addrs].map((addr) => {
+    const r = rep.find((x) => x.address.toLowerCase() === addr);
+    const u = users.find((x) => x.execAddress.toLowerCase() === addr);
+    const completed = r?.completed ?? 0;
+    const timedOut = r?.timed_out ?? 0;
+    const disputed = r?.disputed ?? 0;
+    const total = completed + timedOut + disputed;
+    return {
+      address: addr,
+      name: u?.name ?? generatedName(addr),
+      role: u ? "user-agent" : "worker",
+      completed,
+      timedOut,
+      disputed,
+      earned: r?.earned ?? "0",
+      reliability: total === 0 ? 100 : Math.round((completed / total) * 100),
+      liveStatus: liveStatus(addr),
+      owner: u?.ownerAddress,
+      payout: u?.payoutAddress,
+    } satisfies RosterAgent;
+  });
+}
 
 // Builds the full dashboard snapshot from the projection. Deep-links every tx.
 export function snapshot() {
   const tasks = db.prepare(`SELECT * FROM tasks ORDER BY id DESC`).all() as unknown as TaskRow[];
-  const agents = db.prepare(`SELECT * FROM agents ORDER BY completed DESC`).all() as unknown as AgentRow[];
+  const agents = buildRoster().sort((a, b) => b.completed - a.completed);
   const bidCount = (db.prepare(`SELECT COUNT(*) c FROM bids`).get() as { c: number }).c;
   const txCount = (db.prepare(`SELECT COUNT(*) c FROM txs`).get() as { c: number }).c;
 
