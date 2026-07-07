@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
+import { createPublicClient, http } from "viem";
 import { useLiveSnapshot } from "@/lib/useLiveSnapshot";
 import { useHiveStore } from "@/lib/store";
+import { botChain } from "@/lib/wagmi";
 import { Counters } from "@/components/Counters";
 import { TaskCard } from "@/components/TaskCard";
 import { AgentPanel } from "@/components/AgentPanel";
@@ -10,11 +12,33 @@ import { AppHeader } from "@/components/AppHeader";
 import { ActivityMarquee } from "@/components/ActivityMarquee";
 import "./dashboard.css";
 
+// Ambient block ticker — a viem read-only client polling the chain head.
+const publicClient = createPublicClient({ chain: botChain, transport: http() });
+
 export default function Dashboard() {
   const query = useLiveSnapshot();
   const snapshot = useHiveStore((s) => s.snapshot);
   const connected = useHiveStore((s) => s.connected);
   const [posting, setPosting] = useState(false);
+  const [liveBlock, setLiveBlock] = useState<number>();
+
+  useEffect(() => {
+    let alive = true;
+    async function tick() {
+      try {
+        const n = await publicClient.getBlockNumber();
+        if (alive) setLiveBlock(Number(n));
+      } catch {
+        /* RPC hiccup — keep the last value */
+      }
+    }
+    tick();
+    const id = setInterval(tick, 2000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   async function postTask() {
     setPosting(true);
@@ -33,7 +57,7 @@ export default function Dashboard() {
       />
 
       {/* ── Top bar ─────────────────────────────────────────────── */}
-      <AppHeader />
+      <AppHeader liveBlock={liveBlock} />
 
       {/* ── Live activity marquee (real on-chain events) ────────── */}
       {snapshot && <ActivityMarquee snapshot={snapshot} />}
