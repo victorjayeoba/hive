@@ -1,0 +1,28 @@
+{
+  "name": "@hive/mcp-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hive on-chain agent toolkit — an MCP server exposing BOT Chain read/analysis tools",
+  "bin": {
+    "hive-mcp": "./src/server.ts"
+  },
+  "exports": {
+    "./tools": "./src/tools.ts"
+  },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@hive/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "viem": "^2.54.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

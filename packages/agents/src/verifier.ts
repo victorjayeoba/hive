@@ -20,6 +20,12 @@ export function verify(spec: TaskSpec, result: string): boolean {
       } catch {
         return false;
       }
+    case "analyze-wallet":
+      // A real analysis leads with a RISK verdict and has substance.
+      return /RISK\s+(LOW|MEDIUM|HIGH)/i.test(result) && result.length > 40;
+    case "explain-tx":
+      // A real explanation is a few substantive sentences.
+      return result.length > 40;
     default:
       return true;
   }
