@@ -81,7 +81,6 @@ const server = createServer(async (req, res) => {
         const { handleCreateAgent } = await import("./agents-api.js");
         let provisionExecWallet: (a: { name: string; ownerAddress: string }) => Promise<string>;
         try {
-          // @ts-expect-error provision.js is created in a later task
           ({ provisionExecWallet } = await import("./provision.js"));
         } catch {
           res.statusCode = 503;
