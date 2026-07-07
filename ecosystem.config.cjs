@@ -41,5 +41,19 @@ module.exports = {
     service("hive-indexer", "packages/indexer/src/index.ts", 3000),
     service("hive-swarm", "scripts/run-swarm.ts", 5000),
     service("hive-telegram", "packages/telegram/src/index.ts", 5000),
+    {
+      // Cloudflare quick tunnel exposing the indexer publicly (for Vercel).
+      // NOTE: a quick tunnel's URL changes whenever this restarts. On restart,
+      // grab the new URL from `pm2 logs hive-tunnel` and update Vercel's
+      // NEXT_PUBLIC_INDEXER_HTTP/WS. For a stable URL, use a named tunnel.
+      name: "hive-tunnel",
+      script: "cloudflared",
+      args: "tunnel --url http://localhost:4000",
+      cwd: __dirname,
+      interpreter: "none",
+      autorestart: true,
+      max_restarts: 20,
+      restart_delay: 5000,
+    },
   ],
 };
