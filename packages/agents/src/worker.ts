@@ -2,22 +2,33 @@ import { keccak256, toHex } from "viem";
 import { market } from "./chain.js";
 import { execute } from "./execute.js";
 import { readSpec, publishResult } from "./store.js";
+import { priceForStrategy, type BidStrategy } from "./bid-strategy.js";
 import { Status, hiveMarketAbi } from "@hive/shared";
 
-// A worker watches for posted tasks, bids a price, and — if it wins — performs the
-// real work and submits the result hash. Bidding policy is rule-based and simple
-// in v1: bid a random-ish fraction of the max bounty so workers compete.
-export async function runWorker(privateKey: `0x${string}`, label: string, pollMs = 1000) {
-  const m = market(privateKey);
+// Configuration for a single agent's runtime. Built-in swarm workers use the
+// `runWorker` wrapper below; user agents supply their own system prompt, bidding
+// strategy, and task-type filter.
+export interface AgentConfig {
+  execKey: `0x${string}`;
+  label: string;
+  systemPrompt?: string;
+  taskTypes?: string[];
+  bidStrategy?: BidStrategy;
+  pollMs?: number;
+}
+
+// An agent watches for posted tasks, bids a price, and — if it wins — performs the
+// real work and submits the result hash. Bidding policy is pluggable via
+// `cfg.bidStrategy`; the agent can also filter to specific task types.
+export async function runAgent(cfg: AgentConfig) {
+  const m = market(cfg.execKey);
   const me = m.account.address.toLowerCase();
   let cursor = await m.client.getBlockNumber();
   const bidding = new Set<string>();
   const working = new Set<string>();
+  const pollMs = cfg.pollMs ?? 1000;
 
-  console.log(`[${label}] worker up as ${m.account.address}`);
-
-  // Deterministic-but-varied bid factor per worker so the auction actually clears.
-  const bidFactor = 0.4 + (Number(BigInt(me) % 40n) / 100); // 0.40–0.79
+  console.log(`[${cfg.label}] agent up as ${m.account.address}`);
 
   async function tick() {
     const head = await m.client.getBlockNumber();
@@ -38,10 +49,18 @@ export async function runWorker(privateKey: `0x${string}`, label: string, pollMs
       const now = await m.client.getBlockNumber();
       if (t.status !== Status.Bidding || now >= t.bidCloseBlock) continue;
 
-      const price = BigInt(Math.floor(Number(t.maxBounty) * bidFactor));
+      // Task-type filter: skip tasks whose spec kind isn't in our allowlist.
+      if (cfg.taskTypes && cfg.taskTypes.length > 0) {
+        const spec = await readSpec(t.specHash);
+        if (spec && !cfg.taskTypes.includes(spec.kind)) continue;
+      }
+
+      // Read the current best bid once — used for both the beat-the-best guard
+      // and to inform the pricing strategy.
+      const [, best] = await m.read.bestBid([id]);
+      const price = priceForStrategy(cfg.bidStrategy ?? { type: "balanced" }, t.maxBounty, best);
       // Only bid if we'd actually beat the current best — avoids a guaranteed
       // revert (which would stall this wallet's nonce).
-      const [, best] = await m.read.bestBid([id]);
       if (best !== 0n && price >= best) {
         bidding.add(id.toString()); // still track it so we can award/execute
         continue;
@@ -49,7 +68,7 @@ export async function runWorker(privateKey: `0x${string}`, label: string, pollMs
       try {
         await m.write.bid([id, price]);
         bidding.add(id.toString());
-        console.log(`[${label}] bid ${price} on task ${id}`);
+        console.log(`[${cfg.label}] bid ${price} on task ${id}`);
       } catch {
         bidding.add(id.toString());
       }
@@ -74,17 +93,23 @@ export async function runWorker(privateKey: `0x${string}`, label: string, pollMs
   async function doWork(id: bigint) {
     const t = await m.read.getTask([id]);
     const spec = await readSpec(t.specHash);
-    if (!spec) { console.log(`[${label}] no spec for task ${id}`); return; }
-    console.log(`[${label}] executing task ${id} (${spec.kind})`);
-    const result = await execute(spec);
+    if (!spec) { console.log(`[${cfg.label}] no spec for task ${id}`); return; }
+    console.log(`[${cfg.label}] executing task ${id} (${spec.kind})`);
+    const result = await execute(spec, cfg.systemPrompt);
     const resultHash = keccak256(toHex(result));
     publishResult(resultHash, result);
     await m.write.submit([id, resultHash]);
-    console.log(`[${label}] submitted task ${id}`);
+    console.log(`[${cfg.label}] submitted task ${id}`);
   }
 
   while (true) {
-    try { await tick(); } catch (err) { console.error(`[${label}] tick error`, err); }
+    try { await tick(); } catch (err) { console.error(`[${cfg.label}] tick error`, err); }
     await new Promise((r) => setTimeout(r, pollMs));
   }
+}
+
+// Compatibility wrapper so the built-in swarm keeps working unchanged: a plain
+// worker is just an agent with default (balanced) strategy and no task filter.
+export async function runWorker(privateKey: `0x${string}`, label: string, pollMs = 1000) {
+  return runAgent({ execKey: privateKey, label, pollMs });
 }

@@ -21,33 +21,48 @@ function client(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
+// Default system prompts per task family. A user agent may override the system
+// message via `systemPrompt`; when it's undefined the behavior is unchanged.
+const RISK_SYSTEM_PROMPT =
+  "You are an on-chain risk analyst. Given structured BOT Chain data, write a short, " +
+  "clear risk assessment for a non-expert. Be specific and cite the findings. 4-6 sentences.";
+const EXPLAIN_TX_SYSTEM_PROMPT =
+  "You explain blockchain transactions in plain English for a non-expert. " +
+  "Given decoded transaction data, say what happened in 3-5 clear sentences.";
+
 /// Performs the genuine task. The returned string is what gets shown in the UI;
-/// its keccak hash is what lands on-chain.
-export async function execute(spec: TaskSpec): Promise<string> {
+/// its keccak hash is what lands on-chain. `systemPrompt`, when provided by a
+/// user agent, overrides the default system message for the LLM call.
+export async function execute(spec: TaskSpec, systemPrompt?: string): Promise<string> {
   if (process.env.MOCK_LLM === "1") return mockResult(spec);
 
   switch (spec.kind) {
     case "analyze-wallet":
-      return analyzeWallet(spec);
+      return analyzeWallet(spec, systemPrompt);
     case "explain-tx":
-      return explainTx(spec);
+      return explainTx(spec, systemPrompt);
     default:
-      return textTask(spec);
+      return textTask(spec, systemPrompt);
   }
 }
 
 /** Plain LLM task (summarize / classify / extract). */
-async function textTask(spec: TaskSpec): Promise<string> {
+async function textTask(spec: TaskSpec, systemPrompt?: string): Promise<string> {
+  // Text tasks have no default system message; only add one if the agent supplies it.
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+    ? [{ role: "system", content: systemPrompt }]
+    : [];
+  messages.push({ role: "user", content: `${spec.prompt}\n\n---\n${spec.input}` });
   const response = await client().chat.completions.create({
     model,
     max_tokens: 512,
-    messages: [{ role: "user", content: `${spec.prompt}\n\n---\n${spec.input}` }],
+    messages,
   });
   return response.choices[0]?.message?.content?.trim() ?? "";
 }
 
 /** On-chain: pull real risk data via the toolkit, then have the LLM write the report. */
-async function analyzeWallet(spec: TaskSpec): Promise<string> {
+async function analyzeWallet(spec: TaskSpec, systemPrompt?: string): Promise<string> {
   const address = extractAddress(spec.input);
   if (!address) return "Invalid task: no wallet address provided.";
 
@@ -56,12 +71,7 @@ async function analyzeWallet(spec: TaskSpec): Promise<string> {
     model,
     max_tokens: 400,
     messages: [
-      {
-        role: "system",
-        content:
-          "You are an on-chain risk analyst. Given structured BOT Chain data, write a short, " +
-          "clear risk assessment for a non-expert. Be specific and cite the findings. 4-6 sentences.",
-      },
+      { role: "system", content: systemPrompt ?? RISK_SYSTEM_PROMPT },
       { role: "user", content: `${spec.prompt}\n\nData:\n${JSON.stringify(report)}` },
     ],
   });
@@ -71,7 +81,7 @@ async function analyzeWallet(spec: TaskSpec): Promise<string> {
 }
 
 /** On-chain: decode a real transaction, then have the LLM explain it plainly. */
-async function explainTx(spec: TaskSpec): Promise<string> {
+async function explainTx(spec: TaskSpec, systemPrompt?: string): Promise<string> {
   const hash = extractTxHash(spec.input);
   if (!hash) return "Invalid task: no transaction hash provided.";
 
@@ -80,12 +90,7 @@ async function explainTx(spec: TaskSpec): Promise<string> {
     model,
     max_tokens: 350,
     messages: [
-      {
-        role: "system",
-        content:
-          "You explain blockchain transactions in plain English for a non-expert. " +
-          "Given decoded transaction data, say what happened in 3-5 clear sentences.",
-      },
+      { role: "system", content: systemPrompt ?? EXPLAIN_TX_SYSTEM_PROMPT },
       { role: "user", content: `${spec.prompt}\n\nDecoded tx:\n${JSON.stringify(decoded)}` },
     ],
   });
