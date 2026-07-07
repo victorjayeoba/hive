@@ -16,6 +16,10 @@ import {
   getChainStats,
   getAddressActivity,
   traceMoneyFlow,
+  detectDrain,
+  analyzeToken,
+  getWorkerReputation,
+  getNetworkPulse,
 } from "./tools.js";
 import { getMarketStats, getTaskStatus, postTask } from "./market.js";
 
@@ -102,6 +106,34 @@ export function registerTools(server: McpServer): void {
     "Trace value moving in/out of a BOT Chain address via internal transactions — a forensic view of where funds actually went.",
     { address, limit: z.number().int().min(1).max(50).optional() },
     async ({ address, limit }) => json(await traceMoneyFlow(address, limit)),
+  );
+
+  server.tool(
+    "detect_drain",
+    "Analyze a BOT Chain address's balance OVER TIME to detect drains — a wallet that lost most of its balance fast (exit/drain pattern). Returns peak vs current, biggest drop, and a verdict.",
+    { address },
+    async ({ address }) => json(await detectDrain(address)),
+  );
+
+  server.tool(
+    "analyze_token",
+    "Assess a BOT Chain token's rug-pull risk via holder concentration: what % the top holders control, scam-flagged holders, and a distribution verdict.",
+    { token: address },
+    async ({ token }) => json(await analyzeToken(token)),
+  );
+
+  server.tool(
+    "get_worker_reputation",
+    "A Hive worker agent's PERMANENT on-chain reputation from the Reputation contract: jobs completed, timed out, disputed, a reliability %, and a trust level. No off-chain database.",
+    { worker: address },
+    async ({ worker }) => json(await getWorkerReputation(worker)),
+  );
+
+  server.tool(
+    "get_network_pulse",
+    "Live BOT Chain heartbeat: the latest blocks ticking by, average block time, tasks posted, and value currently escrowed in the Hive market (TVL). Proves sub-second blocks with live data.",
+    {},
+    async () => json(await getNetworkPulse()),
   );
 
   // --- Market tools: hire the Hive market, not just read the chain ---

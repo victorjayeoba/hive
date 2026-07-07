@@ -17,6 +17,10 @@ import {
   getWalletHistory,
   traceMoneyFlow,
   getChainStats,
+  detectDrain,
+  analyzeToken,
+  getWorkerReputation,
+  getNetworkPulse,
 } from "@hive/mcp-tools/tools";
 import { getMarketStats, getTaskStatus, postTask } from "@hive/mcp-tools/market";
 import { publishTask, getContent } from "@hive/mcp-tools/content";
@@ -61,6 +65,10 @@ const HELP = [
   "*/analyze* `0x…wallet` — full wallet overview",
   "*/explain* `0x…txhash` — decode a transaction",
   "*/trace* `0x…wallet` — trace money flow",
+  "*/drain* `0x…wallet` — balance over time, drain detection",
+  "*/token* `0x…token` — rug-pull / holder concentration",
+  "*/rep* `0x…worker` — a worker's on-chain reputation",
+  "*/pulse* — live block + market TVL heartbeat",
   "*/stats* — live Hive market · */chain* — BOT Chain stats",
   "",
   "*Hire the market* (agents compete):",
@@ -167,6 +175,79 @@ bot.onText(/^\/trace(?:\s+(.+))?/, (msg, m) => {
       `💸 *Money flow* \`${addr.slice(0, 10)}…\``,
       "",
       ...edges.map((e) => `• ${e.value}: ${e.from.slice(0, 8)}… → ${e.to.slice(0, 8)}…${e.error ? " ⚠️" : ""}`),
+    ].join("\n");
+  });
+});
+
+bot.onText(/^\/drain(?:\s+(.+))?/, (msg, m) => {
+  const addr = m?.[1]?.match(ADDR)?.[0];
+  if (!addr) return bot.sendMessage(msg.chat.id, "Usage: `/drain 0x…wallet`", md);
+  run(msg.chat.id, async () => {
+    const d = await detectDrain(addr);
+    return [
+      `${d.drained ? "🚨" : "📉"} *Balance history* \`${addr.slice(0, 10)}…\``,
+      `Now: ${d.currentBalance} · Peak: ${d.peakBalance}`,
+      `Data points: ${d.points} · Biggest drop: ${d.maxDropPct}%`,
+      "",
+      `_${d.verdict}_`,
+      "",
+      `[Explorer](${d.explorer})`,
+    ].join("\n");
+  });
+});
+
+bot.onText(/^\/token(?:\s+(.+))?/, (msg, m) => {
+  const addr = m?.[1]?.match(ADDR)?.[0];
+  if (!addr) return bot.sendMessage(msg.chat.id, "Usage: `/token 0x…tokenAddress`", md);
+  run(msg.chat.id, async () => {
+    const t = await analyzeToken(addr);
+    const emoji = t.concentrationRisk === "high" ? "🔴" : t.concentrationRisk === "medium" ? "🟡" : "🟢";
+    return [
+      `${emoji} *${t.symbol ?? "Token"}* — ${t.concentrationRisk.toUpperCase()} concentration`,
+      `${t.name ?? ""} · ${t.holders ?? "?"} holders`,
+      `Top holder: ${t.topHolderPct}% · Top 5: ${t.top5Pct}%`,
+      t.scamHolders ? `⚠️ ${t.scamHolders} scam-flagged holder(s)` : "",
+      "",
+      `_${t.verdict}_`,
+      "",
+      `[Explorer](${t.explorer})`,
+    ].filter(Boolean).join("\n");
+  });
+});
+
+bot.onText(/^\/rep(?:utation)?(?:\s+(.+))?/, (msg, m) => {
+  const addr = m?.[1]?.match(ADDR)?.[0];
+  if (!addr) return bot.sendMessage(msg.chat.id, "Usage: `/rep 0x…workerAddress`", md);
+  run(msg.chat.id, async () => {
+    const r = await getWorkerReputation(addr);
+    const badge = r.level === "trusted" ? "🏅" : r.level === "flagged" ? "⚠️" : r.level === "established" ? "✅" : "🆕";
+    return [
+      `${badge} *Reputation: ${r.level.toUpperCase()}*`,
+      `\`${addr.slice(0, 12)}…\``,
+      `Completed: ${r.completed} · Timed out: ${r.timedOut} · Disputed: ${r.disputed}`,
+      `Reliability: ${r.reliability}%`,
+      "",
+      `_${r.verdict}_`,
+      "",
+      "On-chain track record — no off-chain database.",
+      `[Explorer](${r.explorer})`,
+    ].join("\n");
+  });
+});
+
+bot.onText(/^\/pulse/, (msg) => {
+  run(msg.chat.id, async () => {
+    const p = await getNetworkPulse();
+    return [
+      "💓 *BOT Chain pulse* — live",
+      `Latest block: *#${p.latestBlock}*`,
+      `Avg block time: *${(p.avgBlockTimeMs / 1000).toFixed(2)}s*`,
+      "",
+      "*Recent blocks:*",
+      ...p.recentBlocks.slice(0, 5).map((b) => `• #${b.height} — ${b.txs} txn(s)`),
+      "",
+      `🐝 Hive market: ${p.tasksPosted} tasks posted · *${p.escrowedTotal}* escrowed (TVL)`,
+      `[Explorer](${p.explorer})`,
     ].join("\n");
   });
 });

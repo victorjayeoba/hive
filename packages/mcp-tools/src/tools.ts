@@ -10,15 +10,21 @@ import {
   explorerAddr,
   explorerTx,
   nativeSymbol,
+  marketAddress,
+  reputationAddress,
   type AddressInfo,
   type TxItem,
   type TokenBalance,
   type TokenTransferItem,
+  type BalanceHistoryItem,
+  type TokenHolderItem,
+  type TokenInfo,
+  type BlockItem,
   type Address,
   type Hex,
 } from "./chain.js";
 import { decodeHiveCall, isKnownContract } from "./abi-decode.js";
-import { formatEther } from "viem";
+import { formatEther, parseAbi } from "viem";
 
 // --- getWalletOverview -----------------------------------------------------
 
@@ -395,6 +401,264 @@ export async function traceMoneyFlow(address: string, limit = 15): Promise<FlowE
     block: i.block_number,
     error: i.error,
   }));
+}
+
+// --- detectDrain (balance history) -----------------------------------------
+
+export interface DrainReport {
+  address: string;
+  currentBalance: string;
+  peakBalance: string;
+  points: number;
+  maxDropPct: number; // biggest single-step % drop
+  drained: boolean; // lost >=70% from its peak
+  verdict: string;
+  history: { block: number; timestamp: string; balance: string; delta: string }[];
+  explorer: string;
+}
+
+/**
+ * Look at an address's balance OVER TIME (not just now) and flag drains —
+ * a wallet that lost most of its balance fast. Explorers show the number;
+ * this shows the *trajectory*, which is the actual risk signal.
+ */
+export async function detectDrain(address: string): Promise<DrainReport> {
+  const data = await bs<{ items: BalanceHistoryItem[] }>(
+    `/addresses/${address}/coin-balance-history`,
+  );
+  const items = (data.items ?? []).slice().reverse(); // oldest → newest
+
+  let peak = 0n;
+  let maxDropPct = 0;
+  let prev: bigint | null = null;
+  for (const it of items) {
+    const v = safeBigWei(it.value);
+    if (v > peak) peak = v;
+    if (prev !== null && prev > 0n && v < prev) {
+      const dropPct = Number(((prev - v) * 100n) / prev);
+      if (dropPct > maxDropPct) maxDropPct = dropPct;
+    }
+    prev = v;
+  }
+
+  const current = items.length ? safeBigWei(items[items.length - 1].value) : 0n;
+  const fromPeakPct = peak > 0n ? Number(((peak - current) * 100n) / peak) : 0;
+  const drained = fromPeakPct >= 70 && peak > 0n;
+
+  const verdict = drained
+    ? `⚠️ Drained — down ${fromPeakPct}% from its peak of ${fmtNative(peak)}. Classic drain/exit pattern.`
+    : maxDropPct >= 50
+      ? `A single ${maxDropPct}% drop occurred, but the balance recovered or held. Watch it.`
+      : peak === 0n
+        ? "No balance movement recorded — dormant or fresh address."
+        : `Stable — current ${fmtNative(current)} vs peak ${fmtNative(peak)} (${fromPeakPct}% below peak).`;
+
+  return {
+    address,
+    currentBalance: fmtNative(current),
+    peakBalance: fmtNative(peak),
+    points: items.length,
+    maxDropPct,
+    drained,
+    verdict,
+    history: items.slice(-8).map((it) => ({
+      block: it.block_number,
+      timestamp: it.block_timestamp,
+      balance: fmtNative(it.value),
+      delta: `${it.delta.startsWith("-") ? "" : "+"}${fmtNative(it.delta.replace("-", ""))}`,
+    })),
+    explorer: explorerAddr(address),
+  };
+}
+
+// --- analyzeToken (holder concentration / rug risk) ------------------------
+
+export interface TokenRiskReport {
+  token: string;
+  name: string | null;
+  symbol: string | null;
+  holders: number | null;
+  topHolderPct: number;
+  top5Pct: number;
+  scamHolders: number;
+  concentrationRisk: "high" | "medium" | "low";
+  verdict: string;
+  topHolders: { address: string; pct: number; isScam: boolean }[];
+  explorer: string;
+}
+
+/**
+ * Assess a token's holder concentration — the core rug-pull signal. If a handful
+ * of wallets hold most of the supply, one sell tanks it. Also flags scam-tagged
+ * holders. Not something a single balance lookup tells you.
+ */
+export async function analyzeToken(tokenAddress: string): Promise<TokenRiskReport> {
+  const [info, holdersData] = await Promise.all([
+    bs<TokenInfo>(`/tokens/${tokenAddress}`).catch(() => null),
+    bs<{ items: TokenHolderItem[] }>(`/tokens/${tokenAddress}/holders`),
+  ]);
+  const holders = holdersData.items ?? [];
+  const supply = info?.total_supply ? safeBigWei(info.total_supply) : 0n;
+
+  const pctOf = (v: string) =>
+    supply > 0n ? Number((safeBigWei(v) * 10000n) / supply) / 100 : 0;
+
+  const ranked = holders.map((h) => ({
+    address: h.address.hash,
+    pct: pctOf(h.value),
+    isScam: h.address.is_scam,
+  }));
+  const topHolderPct = ranked[0]?.pct ?? 0;
+  const top5Pct = ranked.slice(0, 5).reduce((a, h) => a + h.pct, 0);
+  const scamHolders = ranked.filter((h) => h.isScam).length;
+
+  const concentrationRisk = top5Pct >= 80 ? "high" : top5Pct >= 50 ? "medium" : "low";
+  const verdict =
+    concentrationRisk === "high"
+      ? `⚠️ Highly concentrated — top 5 wallets hold ${top5Pct.toFixed(1)}% of supply. One sell could tank it (rug risk).`
+      : concentrationRisk === "medium"
+        ? `Moderately concentrated — top 5 hold ${top5Pct.toFixed(1)}%. Some centralization risk.`
+        : `Reasonably distributed — top 5 hold ${top5Pct.toFixed(1)}%. Lower rug risk.`;
+
+  return {
+    token: tokenAddress,
+    name: info?.name ?? null,
+    symbol: info?.symbol ?? null,
+    holders: info?.holders ? Number(info.holders) : null,
+    topHolderPct: Number(topHolderPct.toFixed(2)),
+    top5Pct: Number(top5Pct.toFixed(2)),
+    scamHolders,
+    concentrationRisk,
+    verdict: scamHolders > 0 ? `${verdict} ${scamHolders} scam-flagged holder(s).` : verdict,
+    topHolders: ranked.slice(0, 5).map((h) => ({ ...h, pct: Number(h.pct.toFixed(2)) })),
+    explorer: `https://scan.bohr.life/token/${tokenAddress}`,
+  };
+}
+
+// --- getWorkerReputation (on-chain track record) ---------------------------
+
+const REPUTATION_ABI = parseAbi([
+  "function get(address) view returns ((uint64 completed, uint64 timedOut, uint64 disputed, uint64 lastActiveBlock))",
+]);
+
+export interface WorkerReputation {
+  worker: string;
+  completed: number;
+  timedOut: number;
+  disputed: number;
+  reliability: number; // % of jobs completed cleanly
+  level: "trusted" | "established" | "new" | "flagged";
+  verdict: string;
+  explorer: string;
+}
+
+/**
+ * A worker agent's PERMANENT on-chain reputation — jobs completed, timed out,
+ * disputed — read straight from the Reputation contract. This is what makes Hive
+ * a market with accountability, not a one-shot API. No off-chain database.
+ */
+export async function getWorkerReputation(worker: string): Promise<WorkerReputation> {
+  const rec = (await rpc.readContract({
+    address: reputationAddress(),
+    abi: REPUTATION_ABI,
+    functionName: "get",
+    args: [worker as Address],
+  })) as { completed: bigint; timedOut: bigint; disputed: bigint; lastActiveBlock: bigint };
+
+  const completed = Number(rec.completed);
+  const timedOut = Number(rec.timedOut);
+  const disputed = Number(rec.disputed);
+  const total = completed + timedOut + disputed;
+  const reliability = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const level: WorkerReputation["level"] =
+    disputed > 0 || (total > 0 && reliability < 50)
+      ? "flagged"
+      : completed >= 10 && reliability >= 90
+        ? "trusted"
+        : completed >= 3
+          ? "established"
+          : "new";
+
+  const verdict =
+    total === 0
+      ? "No on-chain job history yet — a brand-new worker."
+      : level === "trusted"
+        ? `Trusted worker: ${completed} jobs completed at ${reliability}% reliability.`
+        : level === "flagged"
+          ? `⚠️ ${disputed} disputed / ${timedOut} timed out of ${total} — proceed with caution.`
+          : `${completed} completed, ${reliability}% reliability across ${total} jobs.`;
+
+  return {
+    worker,
+    completed,
+    timedOut,
+    disputed,
+    reliability,
+    level,
+    verdict,
+    explorer: explorerAddr(worker),
+  };
+}
+
+// --- getNetworkPulse (live chain + market heartbeat) -----------------------
+
+const MARKET_STATE_ABI = parseAbi([
+  "function escrowedTotal() view returns (uint256)",
+  "function nextTaskId() view returns (uint256)",
+]);
+
+export interface NetworkPulse {
+  latestBlock: number;
+  blockTimestamp: string;
+  recentBlocks: { height: number; txs: number; timestamp: string }[];
+  avgBlockTimeMs: number;
+  tasksPosted: number;
+  escrowedTotal: string; // TVL in the market right now
+  explorer: string;
+}
+
+/**
+ * A live heartbeat: the latest blocks ticking by + how much value is escrowed in
+ * the Hive market right now (TVL). Proves the sub-second-block thesis visually and
+ * shows the market is actually holding real money.
+ */
+export async function getNetworkPulse(): Promise<NetworkPulse> {
+  const [blocksData, escrowed, nextId] = await Promise.all([
+    bs<{ items: BlockItem[] }>(`/blocks`),
+    rpc.readContract({ address: marketAddress(), abi: MARKET_STATE_ABI, functionName: "escrowedTotal" }),
+    rpc.readContract({ address: marketAddress(), abi: MARKET_STATE_ABI, functionName: "nextTaskId" }),
+  ]);
+  const blocks = (blocksData.items ?? []).slice(0, 6);
+
+  // Estimate block time from the two most recent blocks with timestamps.
+  let avgBlockTimeMs = 0;
+  if (blocks.length >= 2) {
+    const t0 = new Date(blocks[0].timestamp).getTime();
+    const t1 = new Date(blocks[blocks.length - 1].timestamp).getTime();
+    const span = blocks.length - 1;
+    avgBlockTimeMs = span > 0 ? Math.round(Math.abs(t0 - t1) / span) : 0;
+  }
+
+  return {
+    latestBlock: blocks[0]?.height ?? 0,
+    blockTimestamp: blocks[0]?.timestamp ?? "",
+    recentBlocks: blocks.map((b) => ({ height: b.height, txs: b.tx_count, timestamp: b.timestamp })),
+    avgBlockTimeMs,
+    tasksPosted: Number(nextId as bigint) - 1,
+    escrowedTotal: fmtNative(escrowed as bigint),
+    explorer: "https://scan.bohr.life/blocks",
+  };
+}
+
+/** Parse a wei string to BigInt, tolerating null/garbage (returns 0n). */
+function safeBigWei(v: string | null | undefined): bigint {
+  if (!v) return 0n;
+  try {
+    return BigInt(v);
+  } catch {
+    return 0n;
+  }
 }
 
 // --- helpers re-exported for consumers -------------------------------------

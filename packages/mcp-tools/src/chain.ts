@@ -12,6 +12,12 @@ const NATIVE = process.env.NATIVE_SYMBOL ?? "BOT";
 export const rpc: PublicClient = createPublicClient({ transport: http(RPC_URL) });
 export const nativeSymbol = NATIVE;
 
+// The Hive on-chain contracts (defaults are the live testnet deployment).
+export const marketAddress = (): Address =>
+  (process.env.HIVE_MARKET_ADDRESS ?? "0x31fc3688295309a2a08627ddd1d65deeee85c201") as Address;
+export const reputationAddress = (): Address =>
+  (process.env.HIVE_REPUTATION_ADDRESS ?? "0x1B789752E8732a841DbE1ee9169189A8e01CF169") as Address;
+
 /** GET a Blockscout API v2 path, returning parsed JSON (or throwing on non-2xx). */
 export async function bs<T = unknown>(path: string): Promise<T> {
   const res = await fetch(`${EXPLORER_API}${path}`, {
@@ -80,6 +86,36 @@ export interface TokenTransferItem {
   total: { value: string; decimals: string | null };
   tx_hash: string;
   timestamp: string | null;
+}
+
+export interface BalanceHistoryItem {
+  block_number: number;
+  block_timestamp: string;
+  delta: string; // wei, signed
+  value: string; // wei balance AFTER this change
+  transaction_hash: string | null;
+}
+
+export interface TokenHolderItem {
+  address: { hash: string; is_scam: boolean; is_contract: boolean; name: string | null };
+  value: string; // raw token units
+}
+
+export interface TokenInfo {
+  address: string;
+  name: string | null;
+  symbol: string | null;
+  decimals: string | null;
+  total_supply: string | null;
+  holders: string | null;
+}
+
+export interface BlockItem {
+  height: number;
+  timestamp: string;
+  tx_count: number;
+  gas_used: string | null;
+  miner?: { hash: string } | null;
 }
 
 export const short = (a: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
