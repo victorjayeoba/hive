@@ -7,6 +7,7 @@ import { Counters } from "@/components/Counters";
 import { TaskCard } from "@/components/TaskCard";
 import { AgentPanel } from "@/components/AgentPanel";
 import { AppHeader } from "@/components/AppHeader";
+import { ActivityMarquee } from "@/components/ActivityMarquee";
 import "./dashboard.css";
 
 export default function Dashboard() {
@@ -33,6 +34,9 @@ export default function Dashboard() {
 
       {/* ── Top bar ─────────────────────────────────────────────── */}
       <AppHeader />
+
+      {/* ── Live activity marquee (real on-chain events) ────────── */}
+      {snapshot && <ActivityMarquee snapshot={snapshot} />}
 
       <main className="mx-auto max-w-6xl px-5 py-8">
         {/* ── No data yet: connecting / unreachable state ─────────── */}
