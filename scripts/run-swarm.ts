@@ -1,7 +1,8 @@
 // Brings up the full agent swarm: 1 requester + 3 workers, all against the chain
 // in .env. Enables local interval mining so windows close on a dev node. On BOT
 // Chain testnet that call is a harmless no-op (real blocks already flow).
-import { runWorker } from "@hive/agents/worker";
+import { runAgent } from "@hive/agents/worker";
+import type { BidStrategy } from "@hive/agents/bid-strategy";
 import { runRequester } from "@hive/agents/requester";
 import { seedTasks } from "@hive/agents/seed";
 import { enableIntervalMining } from "@hive/agents/dev";
@@ -20,7 +21,18 @@ if (!requesterKey || workerKeys.length === 0) {
 
 await enableIntervalMining(1);
 
-workerKeys.forEach((key, i) => void runWorker(key, `w${i + 1}`));
+// Give each worker a DISTINCT bidding strategy so the reverse auction actually
+// spreads (e.g. 0.0008 / 0.0006 / 0.0004 on a 0.001 bounty) instead of all three
+// clustering at 60% and separating only by the 1-wei tiebreak. The aggressive
+// worker usually wins on price; the others still compete and build reputation.
+const STRATEGIES: BidStrategy[] = [
+  { type: "aggressive" },   // ~40% of max — undercuts hard to win volume
+  { type: "balanced" },     // ~60%
+  { type: "conservative" }, // ~80% — only wins when others don't bid
+];
+workerKeys.forEach((key, i) =>
+  void runAgent({ execKey: key, label: `w${i + 1}`, bidStrategy: STRATEGIES[i % STRATEGIES.length] }),
+);
 void runRequester(requesterKey, seedTasks(), {
   bounty: 1000000000000000n, bidWindow: 10n, workWindow: 30n, pollMs: 1000,
 });
