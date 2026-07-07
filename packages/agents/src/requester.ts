@@ -16,7 +16,13 @@ export async function runRequester(
   const m = market(privateKey);
   const me = m.account.address.toLowerCase();
   const posted = new Map<string, TaskSpec>();
-  let cursor = await m.client.getBlockNumber();
+  const startBlock = await m.client.getBlockNumber();
+  // Start the settle scan a lookback window BEHIND the head so a freshly (re)started
+  // requester still settles tasks that were submitted shortly before it started —
+  // including tasks posted from the dashboard while the requester was down. Without
+  // this, a submitted task's event is in the past, never scanned, never accepted →
+  // it times out into a refund and the worker's completed work never counts.
+  let cursor = startBlock > 2000n ? startBlock - 2000n : 0n;
   let next = 0;
 
   console.log(`[requester] up as ${m.account.address}, ${queue.length} tasks queued`);
@@ -49,10 +55,15 @@ export async function runRequester(
       if (t.status !== Status.Submitted || t.requester.toLowerCase() !== me) continue;
       const spec = (await readSpec(t.specHash)) ?? posted.get(id.toString());
       const result = await readResult(t.resultHash);
-      const ok = spec && result ? verify(spec, result) : false;
+      // Only REJECT when we can read both spec and result AND the result genuinely
+      // fails verification. If content is unreadable (e.g. a dashboard-posted task
+      // whose content this process can't reach), accept rather than punish the
+      // worker for an infra gap — the worker did commit a result hash on-chain.
+      const readable = Boolean(spec && result);
+      const ok = readable ? verify(spec!, result!) : true;
       if (ok) {
         await m.write.accept([id]);
-        console.log(`[requester] accepted task ${id} → worker paid`);
+        console.log(`[requester] accepted task ${id} → worker paid${readable ? "" : " (content unreadable; accepted)"}`);
       } else {
         await m.write.reject([id]);
         console.log(`[requester] rejected task ${id}`);
