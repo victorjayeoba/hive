@@ -14,6 +14,14 @@ const nextConfig = {
       ".mjs": [".mts", ".mjs"],
       ".cjs": [".cts", ".cjs"],
     };
+    // wagmi's `connectors` barrel statically re-exports its Tempo Wallet
+    // connector, which imports the optional peer dep `accounts` (~0.14). We
+    // only use the `injected()` connector, so alias the unused optional dep to
+    // `false` and let webpack tree-shake the Tempo code path away.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      accounts: false,
+    };
     return config;
   },
 };
