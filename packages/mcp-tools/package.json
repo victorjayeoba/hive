@@ -10,7 +10,8 @@
   "exports": {
     "./tools": "./src/tools.ts",
     "./market": "./src/market.ts",
-    "./content": "./src/content.ts"
+    "./content": "./src/content.ts",
+    "./narrate": "./src/narrate.ts"
   },
   "scripts": {
     "start": "tsx src/server.ts",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "openai": "^4.104.0",
     "viem": "^2.54.3",
     "zod": "^3.25.76"
   },

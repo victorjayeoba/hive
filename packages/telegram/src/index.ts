@@ -20,6 +20,7 @@ import {
 } from "@hive/mcp-tools/tools";
 import { getMarketStats, getTaskStatus, postTask } from "@hive/mcp-tools/market";
 import { publishTask, getContent } from "@hive/mcp-tools/content";
+import { narrate } from "@hive/mcp-tools/narrate";
 
 // Load the repo-root .env (walking up) so HIVE_TELEGRAM_TOKEN + the requester key
 // are available when PM2 starts this without an inline env.
@@ -101,15 +102,17 @@ bot.onText(/^\/risk(?:\s+(.+))?/, (msg, m) => {
   run(msg.chat.id, async () => {
     const r = await assessWalletRisk(addr);
     const emoji = r.level === "high" ? "🔴" : r.level === "medium" ? "🟡" : "🟢";
+    const verdict = await narrate("an on-chain risk analyst", r);
     return [
       `${emoji} *Risk: ${r.level.toUpperCase()}* — ${r.score}/100`,
       `\`${addr}\``,
       `Balance: ${r.balance}${r.isContract ? " · contract" : ""}`,
       "",
       ...r.findings.map((f) => `• ${f}`),
+      verdict ? `\n_${verdict}_` : "",
       "",
       `[View on explorer](${r.explorer})`,
-    ].join("\n");
+    ].filter(Boolean).join("\n");
   });
 });
 
@@ -118,6 +121,7 @@ bot.onText(/^\/analyze(?:\s+(.+))?/, (msg, m) => {
   if (!addr) return bot.sendMessage(msg.chat.id, "Usage: `/analyze 0x…wallet`", md);
   run(msg.chat.id, async () => {
     const [o, h] = await Promise.all([getWalletOverview(addr), getWalletHistory(addr, 5)]);
+    const verdict = await narrate("a blockchain analyst summarizing a wallet", { overview: o, recent: h });
     return [
       `📊 *Wallet* \`${addr}\``,
       `Balance: ${o.balance}`,
@@ -127,6 +131,7 @@ bot.onText(/^\/analyze(?:\s+(.+))?/, (msg, m) => {
       "",
       `*Recent activity* (${h.length}):`,
       ...h.map((t) => `• ${t.method ?? "transfer"} → ${t.result} (${t.value})`),
+      verdict ? `\n_${verdict}_` : "",
       "",
       `[Explorer](${o.explorer})`,
     ].filter(Boolean).join("\n");
@@ -138,12 +143,14 @@ bot.onText(/^\/explain(?:\s+(.+))?/, (msg, m) => {
   if (!hash) return bot.sendMessage(msg.chat.id, "Usage: `/explain 0x…txhash`", md);
   run(msg.chat.id, async () => {
     const d = await decodeTransaction(hash);
+    const verdict = await narrate("explaining a blockchain transaction in plain English", d);
     return [
       `🔍 *Transaction* \`${hash.slice(0, 18)}…\``,
       `Status: ${d.status}`,
       `Method: ${d.decodedCall ?? d.method ?? "(raw transfer)"}`,
       `Value: ${d.value}${d.fee ? ` · fee ${d.fee}` : ""}`,
       d.params.length ? `\nParams:\n${d.params.map((p) => `• ${p.name}: ${p.value}`).join("\n")}` : "",
+      verdict ? `\n_${verdict}_` : "",
       "",
       `[Explorer](${d.explorer})`,
     ].filter(Boolean).join("\n");
