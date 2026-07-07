@@ -11,11 +11,11 @@ export const botChain = defineChain({
 });
 
 // WalletConnect Project ID — REQUIRED for mobile wallet connections (deeplinks).
-// Get a free one at cloud.reown.com and set NEXT_PUBLIC_WC_PROJECT_ID in the
-// environment (Vercel). The fallback below only keeps the build from crashing
-// when the var is unset; mobile/WalletConnect will NOT work until the real ID
-// is provided.
-const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "MISSING_WC_PROJECT_ID";
+// A Project ID is a PUBLIC client identifier (it ships in the browser bundle), so
+// hardcoding a working one as the fallback is safe and guarantees mobile connect
+// works even if the Vercel env var isn't picked up. Override via
+// NEXT_PUBLIC_WC_PROJECT_ID if needed. Get one free at cloud.reown.com.
+const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "9d24fa4a80068b7418e7831535b2e01e";
 
 // getDefaultConfig returns a wagmi Config and automatically bundles injected +
 // WalletConnect + Coinbase + a broad wallet list (so many desktop and mobile
