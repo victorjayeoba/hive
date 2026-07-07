@@ -59,12 +59,19 @@ export async function POST(req: Request) {
     "Hive is the market for AI work on BOT Chain: you ask for on-chain analysis, worker agents " +
     "compete in a reverse auction to deliver the cheapest correct answer, and every result settles on-chain.";
 
+  const hasCustom = Boolean((body.prompt ?? "").trim() || (body.input ?? "").trim());
   const prompt = (body.prompt ?? "").trim() || DEMO_PROMPT;
   const input = (body.input ?? "").trim() || DEMO_INPUT;
   if (prompt.length > 2000 || input.length > 4000) {
     return NextResponse.json({ error: "prompt or input too long" }, { status: 400 });
   }
-  const spec = { kind: "summarize", prompt, input };
+  // User-composed tasks use the generic "text" kind: the worker runs it through the
+  // LLM (execute() routes unknown kinds to textTask) AND the v1 verifier accepts it
+  // (its default case is permissive). The old code forced kind "summarize", so a
+  // non-summary result was longer than its input, failed verify(), and got rejected
+  // → refunded even though the work was correct. The demo task stays "summarize".
+  const kind = hasCustom ? "text" : "summarize";
+  const spec = { kind, prompt, input };
 
   const specHash = keccak256(toHex(JSON.stringify({ kind: spec.kind, prompt: spec.prompt })));
   const inputHash = keccak256(toHex(spec.input));
