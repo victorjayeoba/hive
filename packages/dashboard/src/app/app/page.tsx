@@ -91,7 +91,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   {snapshot.tasks.map((t) => (
-                    <TaskCard key={t.id} task={t} />
+                    <TaskCard key={t.id} task={t} currentBlock={liveBlock} />
                   ))}
                 </div>
               </section>

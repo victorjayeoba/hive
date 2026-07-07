@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Task } from "@/lib/types";
 import { formatEther } from "viem";
 import { TaskTimeline } from "@/components/TaskTimeline";
+import { blocksAgo } from "@/lib/time";
 
 const STATUS: Record<number, { label: string; className: string }> = {
   2: { label: "Bidding", className: "bg-[var(--violet)]/15 text-[var(--violet-soft)]" },
@@ -13,8 +14,11 @@ const STATUS: Record<number, { label: string; className: string }> = {
 };
 
 // One task's live state: status, the reverse-auction bids, and explorer links.
-export function TaskCard({ task }: { task: Task }) {
+// `currentBlock` (the live chain head) lets us show how long ago the last activity
+// (post/bid/award/submit/settle/refund) happened.
+export function TaskCard({ task, currentBlock }: { task: Task; currentBlock?: number }) {
   const status = STATUS[task.status] ?? { label: "—", className: "bg-white/5 text-[var(--text-faint)]" };
+  const ago = blocksAgo(task.updated_block, currentBlock);
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -30,11 +34,14 @@ export function TaskCard({ task }: { task: Task }) {
       }}
       className="group cursor-pointer rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-4 transition-colors hover:border-[var(--line-strong)]"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-sm text-[var(--text-dim)]">Task #{task.id}</span>
-        <span className={`rounded-sm px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider ${status.className}`}>
-          {status.label}
-        </span>
+        <div className="flex items-center gap-2">
+          {ago && <span className="font-mono text-[10px] text-[var(--text-faint)]">{ago}</span>}
+          <span className={`rounded-sm px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider ${status.className}`}>
+            {status.label}
+          </span>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-sm">
