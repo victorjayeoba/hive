@@ -15,7 +15,6 @@
     "dev": "tsx src/server.ts"
   },
   "dependencies": {
-    "@hive/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "viem": "^2.54.3",
     "zod": "^3.25.76"
