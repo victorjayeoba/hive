@@ -291,6 +291,95 @@ export async function assessWalletRisk(address: string): Promise<RiskReport> {
   };
 }
 
+// --- getChainStats ---------------------------------------------------------
+
+export interface ChainStats {
+  avgBlockTimeMs: number;
+  coinPrice: string | null;
+  gasPrices: { slow?: number; average?: number; fast?: number } | null;
+  totalBlocks: string | null;
+  totalTransactions: string | null;
+  totalAddresses: string | null;
+}
+
+/** BOT Chain network stats — proves the sub-second / low-fee thesis with live data. */
+export async function getChainStats(): Promise<ChainStats> {
+  const s = await bs<{
+    average_block_time: number;
+    coin_price: string | null;
+    gas_prices: { slow?: number; average?: number; fast?: number } | null;
+    total_blocks: string | null;
+    total_transactions: string | null;
+    total_addresses: string | null;
+  }>(`/stats`);
+  return {
+    avgBlockTimeMs: s.average_block_time,
+    coinPrice: s.coin_price,
+    gasPrices: s.gas_prices,
+    totalBlocks: s.total_blocks,
+    totalTransactions: s.total_transactions,
+    totalAddresses: s.total_addresses,
+  };
+}
+
+// --- getAddressActivity ----------------------------------------------------
+
+export interface AddressActivity {
+  address: string;
+  transactionsCount: number;
+  tokenTransfersCount: number;
+  gasUsed: string;
+}
+
+/** Activity counters for an address — how busy/established it is. */
+export async function getAddressActivity(address: string): Promise<AddressActivity> {
+  const c = await bs<{
+    transactions_count: string;
+    token_transfers_count: string;
+    gas_usage_count: string;
+  }>(`/addresses/${address}/counters`);
+  return {
+    address,
+    transactionsCount: Number(c.transactions_count),
+    tokenTransfersCount: Number(c.token_transfers_count),
+    gasUsed: c.gas_usage_count,
+  };
+}
+
+// --- traceMoneyFlow --------------------------------------------------------
+
+export interface FlowEdge {
+  from: string;
+  to: string;
+  value: string;
+  block: number;
+  error: string | null;
+}
+
+/**
+ * Trace value moving in/out of an address via internal transactions (contract
+ * calls that forward funds). Forensic view of where money actually went — not
+ * something a single API call reveals.
+ */
+export async function traceMoneyFlow(address: string, limit = 15): Promise<FlowEdge[]> {
+  const data = await bs<{
+    items: {
+      from: { hash: string };
+      to: { hash: string } | null;
+      value: string;
+      block_number: number;
+      error: string | null;
+    }[];
+  }>(`/addresses/${address}/internal-transactions`);
+  return (data.items ?? []).slice(0, limit).map((i) => ({
+    from: i.from.hash,
+    to: i.to?.hash ?? "(contract creation)",
+    value: fmtNative(i.value),
+    block: i.block_number,
+    error: i.error,
+  }));
+}
+
 // --- helpers re-exported for consumers -------------------------------------
 export { short, explorerAddr, explorerTx, nativeSymbol, rpc, formatEther };
 export type { Address, Hex };

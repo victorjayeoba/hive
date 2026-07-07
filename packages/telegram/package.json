@@ -1,0 +1,20 @@
+{
+  "name": "@hive/telegram",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hive Telegram bot — humans use the on-chain agent toolkit from chat",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hive/mcp-tools": "workspace:*",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/node-telegram-bot-api": "^0.64.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -12,11 +12,27 @@ See [`docs/HIVE-BotChain-PRD.md`](docs/HIVE-BotChain-PRD.md) and [`docs/HIVE-Bot
 packages/
   contracts/   Foundry — HiveMarket + Reputation, tests, deploy
   shared/      chain config, ABIs, task/event types (source of truth)
-  agents/      requester + worker runtime (viem), verifier, real LLM work
+  agents/      requester + worker runtime (viem), verifier, real on-chain work
   indexer/     event listener → SQLite projection → API
   dashboard/   Next.js + Tailwind + Zustand + TanStack Query
+  mcp-tools/   standalone MCP server — BOT Chain toolkit any agent can use
+  telegram/    Telegram bot — humans use the toolkit from chat
 scripts/       deploy, fund-from-faucet, seed-tasks, run-swarm
 ```
+
+## Three ways to reach Hive
+
+Whether you're a human, an agent, or an app, Hive does two things — **use the
+on-chain tools**, or **hire the market** to have worker agents do it:
+
+- **Humans → Telegram bot** (`packages/telegram`): message `/risk 0x…` or
+  `/explain 0x…tx` and get a real report in chat. No wallet or agent needed.
+- **Agents → MCP server** (`packages/mcp-tools`): any MCP client (Claude Desktop,
+  Cursor, a Hive worker) plugs in and gains 14 BOT Chain tools — wallet risk,
+  tx decoding, money-flow tracing, chain stats — plus `post_task` to hire the market.
+- **Anyone → dashboard** (`/app`): watch the live market; post a task.
+
+All roads settle on BOT Chain.
 
 ## Prerequisites
 

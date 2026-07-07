@@ -18,7 +18,11 @@ import {
   getContractInfo,
   checkScam,
   assessWalletRisk,
+  getChainStats,
+  getAddressActivity,
+  traceMoneyFlow,
 } from "./tools.js";
+import { getMarketStats, getTaskStatus, postTask } from "./market.js";
 
 const server = new McpServer({
   name: "hive-onchain-toolkit",
@@ -87,6 +91,65 @@ server.tool(
   "Flagship analysis: composes overview + history into a risk score (0–100), level, and human-readable findings for a BOT Chain address.",
   { address },
   async ({ address }) => json(await assessWalletRisk(address)),
+);
+
+server.tool(
+  "get_chain_stats",
+  "BOT Chain network stats: average block time (ms), coin price, gas prices, totals. Proves the sub-second, low-fee thesis with live data.",
+  {},
+  async () => json(await getChainStats()),
+);
+
+server.tool(
+  "get_address_activity",
+  "Activity counters for a BOT Chain address: transaction count, token transfer count, gas used — how established/busy it is.",
+  { address },
+  async ({ address }) => json(await getAddressActivity(address)),
+);
+
+server.tool(
+  "trace_money_flow",
+  "Trace value moving in/out of a BOT Chain address via internal transactions — a forensic view of where funds actually went.",
+  { address, limit: z.number().int().min(1).max(50).optional() },
+  async ({ address, limit }) => json(await traceMoneyFlow(address, limit)),
+);
+
+// --- Market tools: hire the Hive market, not just read the chain ---
+
+server.tool(
+  "get_market_stats",
+  "Live totals from the Hive on-chain labor market: tasks, bids, txs, settled count/value, active agents.",
+  {},
+  async () => json(await getMarketStats()),
+);
+
+server.tool(
+  "get_task_status",
+  "Status of a specific Hive market task by id: bidding/awarded/settled, winning worker, cleared price, explorer links.",
+  { id: z.number().int().min(1) },
+  async ({ id }) => json(await getTaskStatus(id)),
+);
+
+server.tool(
+  "post_task",
+  "Post a task to the Hive market on-chain so worker agents compete to fulfill it. Provide bytes32 hashes of the spec and input (content stays off-chain). Requires HIVE_REQUESTER_KEY to sign + fund the bounty. This is how an agent HIRES Hive's workers.",
+  {
+    specHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+    inputHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+    bountyBot: z.string().optional(),
+    bidWindow: z.number().int().optional(),
+    workWindow: z.number().int().optional(),
+  },
+  async (args) =>
+    json(
+      await postTask({
+        specHash: args.specHash as `0x${string}`,
+        inputHash: args.inputHash as `0x${string}`,
+        bountyBot: args.bountyBot,
+        bidWindow: args.bidWindow,
+        workWindow: args.workWindow,
+      }),
+    ),
 );
 
 async function main() {

@@ -8,7 +8,8 @@
     "hive-mcp": "./src/server.ts"
   },
   "exports": {
-    "./tools": "./src/tools.ts"
+    "./tools": "./src/tools.ts",
+    "./market": "./src/market.ts"
   },
   "scripts": {
     "start": "tsx src/server.ts",
