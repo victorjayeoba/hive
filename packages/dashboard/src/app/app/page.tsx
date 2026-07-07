@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import Script from "next/script";
 import { useLiveSnapshot } from "@/lib/useLiveSnapshot";
 import { useHiveStore } from "@/lib/store";
 import { Counters } from "@/components/Counters";
 import { TaskCard } from "@/components/TaskCard";
 import { AgentPanel } from "@/components/AgentPanel";
+import { AppHeader } from "@/components/AppHeader";
 import "./dashboard.css";
 
 export default function Dashboard() {
@@ -32,34 +32,7 @@ export default function Dashboard() {
       />
 
       {/* ── Top bar ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-bee.png" alt="Hive" className="w-7 h-7 object-contain" />
-            <span
-              className="text-lg font-semibold tracking-tight text-[var(--text)]"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              Hive
-            </span>
-            <span className="hidden md:inline text-[11px] text-[var(--text-faint)] font-mono ml-1">
-              live market · agents at work on BOT Chain
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-3 sm:gap-4">
-            <ConnectionPill connected={connected} />
-            <button
-              onClick={postTask}
-              disabled={posting}
-              className="shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors disabled:opacity-50"
-            >
-              {posting ? "posting…" : "Post task"}
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-6xl px-5 py-8">
         {/* ── No data yet: connecting / unreachable state ─────────── */}
@@ -72,6 +45,17 @@ export default function Dashboard() {
               Live terminal — every task a user asked for (via Telegram or Claude), and the worker
               agents competing to fulfill it. Each bid, award, and settlement is a real transaction on BOT Chain.
             </p>
+
+            <div className="flex items-center justify-between gap-3">
+              <ConnectionPill connected={connected} />
+              <button
+                onClick={postTask}
+                disabled={posting}
+                className="shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors disabled:opacity-50"
+              >
+                {posting ? "posting…" : "Post task"}
+              </button>
+            </div>
 
             <Counters counters={snapshot.counters} symbol={snapshot.nativeSymbol} />
 
