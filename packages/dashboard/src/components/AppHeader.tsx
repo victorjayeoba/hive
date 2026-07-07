@@ -70,7 +70,7 @@ const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL ?? "https://t.me/usehive_bot
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? "";
 
 export function AppHeader({ liveBlock }: { liveBlock?: number }) {
-  const [copied, setCopied] = useState(false);
+  const [showClaude, setShowClaude] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
@@ -100,13 +100,13 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
             <TelegramIcon />
           </a>
           <button
-            onClick={() => { navigator.clipboard.writeText(MCP_URL); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-            title="Copy the Hive MCP server URL for Claude / Cursor"
+            onClick={() => setShowClaude(true)}
+            title="Connect Hive to Claude (MCP)"
             aria-label="Add to Claude"
             className="inline-flex h-[30px] items-center gap-1.5 rounded-sm border border-[var(--line)] px-2 text-[var(--text-dim)] hover:border-[var(--line-strong)] hover:text-[var(--text)]"
           >
             <ClaudeIcon />
-            <span className="hidden text-[11px] sm:inline">{copied ? "copied ✓" : "Claude"}</span>
+            <span className="hidden text-[11px] sm:inline">Claude</span>
           </button>
           {/* Secondary: outlined so it doesn't compete with the primary Connect CTA. */}
           <Link
@@ -121,6 +121,80 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
           <WalletButton />
         </div>
       </div>
+      {showClaude && <ClaudeConnectModal onClose={() => setShowClaude(false)} />}
     </header>
+  );
+}
+
+// "Connect to Claude" popup: the MCP URL to copy + brief steps to add it as a
+// custom connector in Claude / Cursor. No fragile deep-link — just copy + paste.
+function ClaudeConnectModal({ onClose }: { onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const url = MCP_URL || "set NEXT_PUBLIC_MCP_URL";
+  const CLAUDE_CONNECTORS = "https://claude.ai/settings/connectors";
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative mt-10 w-full max-w-md rounded-md border border-[var(--line-strong)] bg-[var(--panel)] p-5 text-[var(--text)] shadow-2xl"
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-sm px-2 py-0.5 font-mono text-sm text-[var(--text-dim)] hover:bg-white/5 hover:text-[var(--amber)]"
+        >
+          ✕
+        </button>
+
+        <div className="mb-1 flex items-center gap-2">
+          <ClaudeIcon />
+          <h2 className="text-lg font-semibold">Connect Hive to Claude</h2>
+        </div>
+        <p className="mb-4 text-xs text-[var(--text-dim)]">
+          Add Hive&apos;s MCP server and Claude (or Cursor) gains 18 BOT Chain tools — wallet risk,
+          tx decoding, money-flow tracing, live chain stats — plus the power to hire the market.
+        </p>
+
+        {/* Copyable URL */}
+        <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+          MCP server URL
+        </label>
+        <div className="mb-4 flex items-stretch gap-2">
+          <code className="min-w-0 flex-1 truncate rounded-sm border border-[var(--line)] bg-black/30 px-2 py-2 font-mono text-xs text-[var(--text-dim)]">
+            {url}
+          </code>
+          <button
+            onClick={() => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+            className="shrink-0 rounded-sm bg-[var(--amber)] px-3 text-xs font-semibold text-[#1a1206] hover:bg-[#ffd787]"
+          >
+            {copied ? "copied ✓" : "Copy"}
+          </button>
+        </div>
+
+        {/* Steps */}
+        <ol className="mb-4 space-y-2 text-sm text-[var(--text-dim)]">
+          <li><span className="text-[var(--amber)]">1.</span> Copy the URL above.</li>
+          <li><span className="text-[var(--amber)]">2.</span> In Claude, open <span className="text-[var(--text)]">Settings → Connectors → Add custom connector</span>.</li>
+          <li><span className="text-[var(--amber)]">3.</span> Paste the URL and add it.</li>
+          <li><span className="text-[var(--amber)]">4.</span> Ask Claude: <span className="text-[var(--text)]">&ldquo;What&apos;s the BOT Chain network pulse?&rdquo;</span> — it&apos;ll call a Hive tool.</li>
+        </ol>
+
+        <a
+          href={CLAUDE_CONNECTORS}
+          target="_blank"
+          rel="noreferrer"
+          className="block w-full rounded-sm border border-[var(--line-strong)] py-2 text-center text-xs font-semibold text-[var(--text)] hover:border-[var(--amber)] hover:text-[var(--amber)]"
+        >
+          Open Claude connector settings ↗
+        </a>
+        <p className="mt-2 text-center text-[10px] text-[var(--text-faint)]">
+          Works in Claude Desktop, claude.ai, and Cursor.
+        </p>
+      </div>
+    </div>
   );
 }
