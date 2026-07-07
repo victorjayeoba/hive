@@ -31,6 +31,20 @@ export async function POST() {
     return NextResponse.json({ error: "requester key or market address not configured" }, { status: 500 });
   }
 
+  // Surface the exact missing/failing config instead of throwing a blank 500.
+  // chainConfig.rpcUrl lazily calls required("RPC_URL")/required("CHAIN_ID"),
+  // which THROW when unset — a common Vercel misconfig.
+  let rpcUrl: string;
+  try {
+    rpcUrl = chainConfig.rpcUrl;
+    if (!process.env.CHAIN_ID) throw new Error("CHAIN_ID not set");
+  } catch (e) {
+    return NextResponse.json(
+      { error: `chain config missing (${(e as Error).message}). Set RPC_URL and CHAIN_ID in the environment.` },
+      { status: 500 },
+    );
+  }
+
   const spec = {
     kind: "summarize",
     prompt: "Summarize the following text in one sentence of at most 20 words.",
@@ -39,33 +53,41 @@ export async function POST() {
       "compete in a reverse auction to deliver the cheapest correct answer, and every result settles on-chain.",
   };
 
-  const account = privateKeyToAccount(key);
-  const wallet = createWalletClient({ account, chain: hiveChain, transport: http(chainConfig.rpcUrl) });
-  const client = createPublicClient({ chain: hiveChain, transport: http(chainConfig.rpcUrl) });
-
   const specHash = keccak256(toHex(JSON.stringify({ kind: spec.kind, prompt: spec.prompt })));
   const inputHash = keccak256(toHex(spec.input));
 
-  // Publish content to the shared indexer store BEFORE posting on-chain, so the
-  // spec is readable the instant a worker wins. If this fails, don't post a task
-  // no one can fulfil — surface the error instead.
   try {
-    await publishToStore(specHash, inputHash, { kind: spec.kind, prompt: spec.prompt, input: spec.input }, spec.input);
+    const account = privateKeyToAccount(key);
+    const wallet = createWalletClient({ account, chain: hiveChain, transport: http(rpcUrl) });
+    const client = createPublicClient({ chain: hiveChain, transport: http(rpcUrl) });
+
+    // Publish content to the shared indexer store BEFORE posting on-chain, so the
+    // spec is readable the instant a worker wins. If this fails, don't post a task
+    // no one can fulfil — surface the error instead.
+    try {
+      await publishToStore(specHash, inputHash, { kind: spec.kind, prompt: spec.prompt, input: spec.input }, spec.input);
+    } catch (e) {
+      return NextResponse.json(
+        { error: `could not publish task content to the indexer (${(e as Error).message}). Check NEXT_PUBLIC_INDEXER_HTTP.` },
+        { status: 502 },
+      );
+    }
+
+    const hash = await wallet.writeContract({
+      address: marketAddress,
+      abi: hiveMarketAbi,
+      functionName: "postTask",
+      args: [specHash, inputHash, 10n, 30n],
+      value: 1000000000000000n,
+    });
+    await client.waitForTransactionReceipt({ hash });
+
+    return NextResponse.json({ ok: true, txHash: hash });
   } catch (e) {
+    // No more blank 500s — always return a readable reason.
     return NextResponse.json(
-      { error: `could not publish task content to the indexer (${(e as Error).message}). Set NEXT_PUBLIC_INDEXER_HTTP.` },
-      { status: 502 },
+      { error: `post-task failed: ${(e as Error).message}` },
+      { status: 500 },
     );
   }
-
-  const hash = await wallet.writeContract({
-    address: marketAddress,
-    abi: hiveMarketAbi,
-    functionName: "postTask",
-    args: [specHash, inputHash, 10n, 30n],
-    value: 1000000000000000n,
-  });
-  await client.waitForTransactionReceipt({ hash });
-
-  return NextResponse.json({ ok: true, txHash: hash });
 }
