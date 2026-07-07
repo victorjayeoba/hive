@@ -5,7 +5,7 @@ import { AgentAvatar } from "@/app/_hive/components/AgentAvatar";
 
 // Per-agent reputation + earnings, read straight from on-chain counters. Each
 // row is a roster entry and links to that agent's profile.
-export function AgentPanel({ agents, explorerBase }: { agents: Agent[]; explorerBase: string }) {
+export function AgentPanel({ agents }: { agents: Agent[] }) {
   if (agents.length === 0) {
     return (
       <div className="rounded-md border border-[var(--line)] bg-[var(--panel)]/40 p-6 text-center">

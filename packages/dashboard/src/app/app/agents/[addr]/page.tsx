@@ -175,7 +175,9 @@ export default function AgentProfile() {
                       strategy
                     </p>
                     <span className="font-mono text-xs text-[var(--text-dim)]">
-                      {JSON.stringify(config.bidStrategy)}
+                      {typeof (config.bidStrategy as { type?: string })?.type === "string"
+                        ? (config.bidStrategy as { type?: string }).type
+                        : JSON.stringify(config.bidStrategy)}
                     </span>
                   </div>
                 </div>

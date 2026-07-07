@@ -2,9 +2,9 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHiveStore } from "./store";
+import { INDEXER_HTTP } from "./indexer";
 import type { Snapshot } from "./types";
 
-const INDEXER_HTTP = process.env.NEXT_PUBLIC_INDEXER_HTTP ?? "http://localhost:4000";
 const INDEXER_WS = process.env.NEXT_PUBLIC_INDEXER_WS ?? "ws://localhost:4000";
 
 // Initial fetch via TanStack Query, then keep the Zustand store live via the

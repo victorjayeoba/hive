@@ -106,7 +106,7 @@ export default function Dashboard() {
 
               <section>
                 <SectionLabel>Agents</SectionLabel>
-                <AgentPanel agents={snapshot.agents} explorerBase={snapshot.explorerBase} />
+                <AgentPanel agents={snapshot.agents} />
               </section>
             </div>
           </div>
