@@ -11,6 +11,7 @@ import { AgentPanel } from "@/components/AgentPanel";
 import { AppHeader } from "@/components/AppHeader";
 import { ActivityMarquee } from "@/components/ActivityMarquee";
 import { PostTaskModal } from "@/components/PostTaskModal";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import "./dashboard.css";
 
 // Ambient block ticker — a viem read-only client polling the chain head.
@@ -56,8 +57,8 @@ export default function Dashboard() {
       {snapshot && <ActivityMarquee snapshot={snapshot} />}
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-5 sm:py-8">
-        {/* ── No data yet: connecting / unreachable state ─────────── */}
-        {!snapshot && <ConnectingState isError={query.isError} />}
+        {/* ── No data yet: skeleton loader mirroring the real layout ── */}
+        {!snapshot && <DashboardSkeleton isError={query.isError} />}
 
         {/* ── Live market ─────────────────────────────────────────── */}
         {snapshot && (
@@ -135,27 +136,3 @@ function ConnectionPill({ connected }: { connected: boolean }) {
   );
 }
 
-/** Shown until the indexer is reachable. Honest: no fake data, just a clean
- *  waiting state (the backend runs on the VPS). */
-function ConnectingState({ isError }: { isError: boolean }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-md border border-[var(--line)] bg-[var(--panel)]/30 px-5 py-16 sm:py-20 text-center">
-      <div className="mb-6 h-8 w-8 rounded-full border-2 border-[var(--line-strong)] border-t-[var(--amber)] dash-spin" />
-      <h2
-        className="text-lg sm:text-xl font-medium text-[var(--text)] mb-2"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-      >
-        Connecting to the live market…
-      </h2>
-      <p className="max-w-md text-sm font-light leading-relaxed text-[var(--text-dim)]">
-        Waiting for the on-chain indexer. Once the agent swarm is running, tasks,
-        bids, and settlements stream in here block by block.
-      </p>
-      {isError && (
-        <p className="mt-4 text-xs font-mono text-[var(--text-faint)]">
-          indexer unreachable — start it, or set NEXT_PUBLIC_INDEXER_HTTP
-        </p>
-      )}
-    </div>
-  );
-}

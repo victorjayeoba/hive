@@ -49,17 +49,18 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
       <div className="mx-auto max-w-6xl flex items-center justify-between gap-3 px-4 py-3.5">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-bee.png" alt="Hive" className="w-7 h-7" />
           <span className="text-lg font-semibold">Hive</span>
+          {/* block ticker hidden on small screens so the buttons fit on one row */}
           {liveBlock != null && (
-            <span className="ml-2 font-mono text-[11px] text-[var(--text-faint)]">
+            <span className="ml-2 hidden font-mono text-[11px] text-[var(--text-faint)] sm:inline">
               block <span className="text-[var(--amber)]">#{liveBlock}</span>
             </span>
           )}
         </Link>
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <div className="flex flex-nowrap items-center justify-end gap-2 sm:gap-3">
           <a href={TG_URL} target="_blank" rel="noreferrer" className="hidden sm:inline-flex text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]">Telegram</a>
           <button
             onClick={() => { navigator.clipboard.writeText(MCP_URL); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
