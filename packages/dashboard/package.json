@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@hive/shared": "workspace:*",
+    "@rainbow-me/rainbowkit": "^2.2.11",
     "@tanstack/react-query": "^5.62.7",
+    "@walletconnect/ethereum-provider": "^2.23.10",
     "iconify-icon": "^3.0.2",
     "lucide-react": "^1.23.0",
     "next": "^15.1.2",

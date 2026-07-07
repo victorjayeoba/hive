@@ -14,13 +14,20 @@ const nextConfig = {
       ".mjs": [".mts", ".mjs"],
       ".cjs": [".cts", ".cjs"],
     };
-    // wagmi's `connectors` barrel statically re-exports its Tempo Wallet
-    // connector, which imports the optional peer dep `accounts` (~0.14). We
-    // only use the `injected()` connector, so alias the unused optional dep to
-    // `false` and let webpack tree-shake the Tempo code path away.
+    // wagmi's `connectors` barrel (pulled in transitively by RainbowKit's
+    // getDefaultConfig) statically re-exports several connectors whose optional
+    // peer deps we don't install: the Tempo Wallet connector needs `accounts`,
+    // the Porto connector needs `porto`, and the Safe connector needs the
+    // `@safe-global/*` SDKs. We don't offer those wallets, so alias each unused
+    // optional dep to `false` and let webpack tree-shake those code paths away.
+    // NOTE: `@walletconnect/ethereum-provider` is intentionally NOT stubbed — it
+    // is installed and required for mobile wallet connections via WalletConnect.
     config.resolve.alias = {
       ...config.resolve.alias,
       accounts: false,
+      porto: false,
+      "@safe-global/safe-apps-sdk": false,
+      "@safe-global/safe-apps-provider": false,
     };
     return config;
   },

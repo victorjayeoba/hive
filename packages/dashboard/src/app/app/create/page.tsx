@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { useAccount, useConnect, useSignMessage } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useAccount, useSignMessage } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { AppHeader } from "@/components/AppHeader";
 import { createAgentMessage } from "@/lib/agent-message";
 import { INDEXER_HTTP } from "@/lib/indexer";
@@ -41,7 +41,7 @@ const PROMPT_PRESETS: string[] = [
 
 export default function CreateAgent() {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { openConnectModal } = useConnectModal();
   const { signMessageAsync } = useSignMessage();
 
   const [name, setName] = useState("");
@@ -155,7 +155,7 @@ export default function CreateAgent() {
           <div className="rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-8 text-center">
             <p className="mb-4 text-sm text-[var(--text-dim)]">Connect your wallet to create an agent.</p>
             <button
-              onClick={() => connect({ connector: injected() })}
+              onClick={() => openConnectModal?.()}
               className="rounded-sm border border-[var(--amber)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--amber)]"
             >
               Connect Wallet
