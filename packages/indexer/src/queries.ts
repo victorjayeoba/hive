@@ -7,12 +7,19 @@ export function snapshot() {
   const agents = db.prepare(`SELECT * FROM agents ORDER BY completed DESC`).all() as unknown as AgentRow[];
   const bidCount = (db.prepare(`SELECT COUNT(*) c FROM bids`).get() as { c: number }).c;
   const txCount = (db.prepare(`SELECT COUNT(*) c FROM txs`).get() as { c: number }).c;
-  const settledValue = (db.prepare(`SELECT COALESCE(SUM(CAST(price AS INTEGER)),0) v FROM tasks WHERE status = 5`).get() as { v: number }).v;
+
+  // Wei values (18 decimals) overflow a JS Number, so sum them with BigInt in JS
+  // rather than SUM(CAST(price AS INTEGER)) in SQL (which throws ERR_OUT_OF_RANGE).
+  const settledValue = tasks
+    .filter((t) => t.status === 5 && t.price)
+    .reduce((acc, t) => acc + safeBig(t.price), 0n);
 
   return {
     tasks: tasks.map((t) => ({
       ...t,
-      bids: db.prepare(`SELECT worker, price, tx_hash, block FROM bids WHERE task_id = ? ORDER BY CAST(price AS INTEGER) ASC`).all(t.id),
+      // Sort bids by price ascending using BigInt comparison (wei-safe).
+      bids: (db.prepare(`SELECT worker, price, tx_hash, block FROM bids WHERE task_id = ?`).all(t.id) as unknown as BidRow[])
+        .sort((a, b) => (safeBig(a.price) < safeBig(b.price) ? -1 : 1)),
       postedUrl: t.posted_tx ? txUrl(t.posted_tx) : null,
       settledUrl: t.settled_tx ? txUrl(t.settled_tx) : null,
     })),
@@ -38,4 +45,18 @@ interface TaskRow {
 
 interface AgentRow {
   address: string; completed: number; timed_out: number; disputed: number; earned: string;
+}
+
+interface BidRow {
+  worker: string; price: string | null; tx_hash: string; block: number;
+}
+
+/** Parse a wei string to BigInt, tolerating null/garbage (returns 0n). */
+function safeBig(v: string | null | undefined): bigint {
+  if (!v) return 0n;
+  try {
+    return BigInt(v);
+  } catch {
+    return 0n;
+  }
 }
