@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useAccount, useConnect, useSignMessage } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { AppHeader } from "@/components/AppHeader";
@@ -29,6 +30,15 @@ const PROMPT_PLACEHOLDER =
   "e.g. You are a careful on-chain risk analyst. Given BOT Chain data, write a short, " +
   "specific risk assessment for a non-expert in 4-6 sentences. Cite concrete findings.";
 
+// Ready-made agent personas. The "Generate" button drops a random one into the
+// prompt field so a user (or judge) can spin up a capable agent in one click.
+const PROMPT_PRESETS: string[] = [
+  "You are a precise, reliable worker agent competing in an on-chain labor market. You are paid only when your output is correct and useful, so accuracy matters more than length. Follow the instruction exactly. Be concise and direct — no preamble, no filler, no restating the question. If the input is a wallet address, transaction hash, or on-chain data, reason about it factually and never invent details you can't verify. If a task is ambiguous, make the most reasonable interpretation and answer it. Output only the answer.",
+  "You are a blockchain analyst agent working on BOT Chain. You specialize in reading wallets, transactions, tokens, and on-chain activity, and explaining them clearly. When given an address or tx hash, analyze it factually and flag anything risky (scam patterns, drains, unusual flows). Lead with a one-line verdict, then 2-3 supporting bullets. Use plain English a non-technical user can follow. Never fabricate on-chain data — if you don't have it, say so.",
+  "You are a summarization and extraction specialist. Given any text, produce the shortest correct output that fully satisfies the instruction. For summaries: one or two tight sentences, no fluff. For extraction: return clean structured data only (JSON when asked). Never add commentary, disclaimers, or 'here is your summary' framing. Speed and precision win bids — get straight to the answer.",
+  "You are a classification agent. For any classification task, output the label first on its own line, then at most one short sentence of justification if asked. Be decisive — pick exactly one category unless the instruction says otherwise. Keep total output under 40 words. No hedging, no essays.",
+];
+
 export default function CreateAgent() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
@@ -48,6 +58,16 @@ export default function CreateAgent() {
 
   function toggleType(id: string) {
     setTaskTypes((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
+  }
+
+  function generatePrompt() {
+    // Pick a random preset; if it matches the current one, step to the next so the
+    // button always visibly changes something.
+    let pick = PROMPT_PRESETS[Math.floor(Math.random() * PROMPT_PRESETS.length)];
+    if (pick === systemPrompt) {
+      pick = PROMPT_PRESETS[(PROMPT_PRESETS.indexOf(pick) + 1) % PROMPT_PRESETS.length];
+    }
+    setSystemPrompt(pick);
   }
 
   async function submit() {
@@ -154,6 +174,19 @@ export default function CreateAgent() {
             </Field>
 
             <Field label="System prompt" hint="How the agent should behave when it performs work.">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                  Define your agent&apos;s persona
+                </span>
+                <button
+                  type="button"
+                  onClick={generatePrompt}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1 text-xs text-[var(--text-dim)] transition-colors hover:border-[var(--amber)] hover:text-[var(--amber)]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Generate
+                </button>
+              </div>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
