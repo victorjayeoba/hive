@@ -3,15 +3,24 @@ import { WebSocketServer } from "ws";
 import { startPoller } from "./poller.js";
 import { snapshot } from "./queries.js";
 import { putContent, getContent } from "./content.js";
+import type { UserAgentRow } from "./db.js";
 
 const port = Number(process.env.INDEXER_PORT ?? 4000);
+
+function publicAgentFields(a: UserAgentRow) {
+  return {
+    execAddress: a.execAddress, name: a.name, systemPrompt: a.systemPrompt,
+    ownerAddress: a.ownerAddress, payoutAddress: a.payoutAddress,
+    taskTypes: a.taskTypes, bidStrategy: a.bidStrategy, status: a.status, createdAt: a.createdAt,
+  };
+}
 
 // HTTP endpoints (CORS-open):
 //   GET  /snapshot        — the full market projection (dashboard)
 //   GET  /health          — liveness
 //   GET  /content/:hash   — task/result content by its on-chain hash
 //   POST /content         — publish content { key, value } (posters + workers)
-const server = createServer((req, res) => {
+const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "content-type");
@@ -51,6 +60,43 @@ const server = createServer((req, res) => {
       } catch (e) {
         res.statusCode = 400;
         res.end(JSON.stringify({ error: (e as Error).message }));
+      }
+    });
+  } else if (url === "/agents" && req.method === "GET") {
+    const { listUserAgents } = await import("./db.js");
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(listUserAgents().map(publicAgentFields)));
+  } else if (url.startsWith("/agents/") && req.method === "GET") {
+    const { getUserAgent } = await import("./db.js");
+    const exec = decodeURIComponent(url.slice("/agents/".length));
+    const a = getUserAgent(exec);
+    if (!a) { res.statusCode = 404; res.end(JSON.stringify({ error: "not found" })); }
+    else { res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(publicAgentFields(a))); }
+  } else if (url === "/agents" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; if (body.length > 200_000) req.destroy(); });
+    req.on("end", async () => {
+      try {
+        const parsed = JSON.parse(body);
+        const { handleCreateAgent } = await import("./agents-api.js");
+        let provisionExecWallet: (a: { name: string; ownerAddress: string }) => Promise<string>;
+        try {
+          // @ts-expect-error provision.js is created in a later task
+          ({ provisionExecWallet } = await import("./provision.js"));
+        } catch {
+          res.statusCode = 503;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ ok: false, error: "provisioning not available on this host" }));
+          return;
+        }
+        const result = await handleCreateAgent(parsed, { provisionExecWallet });
+        res.statusCode = result.ok ? 200 : result.status;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(result));
+      } catch (e) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: false, error: (e as Error).message }));
       }
     });
   } else {
