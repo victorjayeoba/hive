@@ -1,73 +1,45 @@
 /**
  * PM2 process config for the Hive backend on a VPS.
  *
- *   pm2 start ecosystem.config.cjs      # start both services
- *   pm2 logs                            # tail logs
- *   pm2 status                          # see state
+ *   pm2 start ecosystem.config.cjs      # start the services
+ *   pm2 logs / pm2 status               # observe
  *   pm2 save && pm2 startup             # survive reboots
  *
- * Contracts are deployed once (pnpm deploy — a one-off, not managed here).
- * These two are the long-running services:
- *   - indexer : chain events -> SQLite -> HTTP /snapshot + WebSocket on :4000
- *   - swarm   : the autonomous agents (1 requester + 3 workers)
+ * Long-running services (contracts are deployed once, separately):
+ *   - indexer  : chain events -> SQLite -> HTTP /snapshot + WS + /content on :4000
+ *   - swarm    : the autonomous agents (1 requester + 3 workers)
+ *   - telegram : the human front-door bot (only runs if HIVE_TELEGRAM_TOKEN is set)
  *
- * Both read config from the repo-root .env, so set that up first (see DEPLOY.md).
+ * Requires a flat node_modules (see .npmrc: node-linker=hoisted) so every dep
+ * resolves from the repo root. Services launch `node` with tsx as an ESM loader
+ * (resolved via require.resolve so the path is layout-independent), not via
+ * `pnpm <script>` (which re-checks deps/supply-chain on every start and loops).
  *
- * We run the apps by launching node with tsx as a loader, resolving tsx's real
- * path via require.resolve so it works regardless of how pnpm laid out
- * node_modules (the .bin/tsx location varies by pnpm version and OS). Running
- * tsx directly (not via `pnpm <script>`) avoids pnpm re-checking deps /
- * supply-chain policy on every launch, which was crash-looping the processes.
+ * All services read config from the repo-root .env.
  */
 const { createRequire } = require("node:module");
 const path = require("node:path");
 
-// tsx ships an ESM loader entry; resolve it from any package that depends on tsx.
-const req = createRequire(path.join(__dirname, "packages/indexer/package.json"));
-const tsxLoader = req.resolve("tsx/esm"); // e.g. .../tsx/dist/loader.mjs
-
-// node --import <tsx loader> lets plain `node` run TypeScript.
+const req = createRequire(path.join(__dirname, "package.json"));
+const tsxLoader = req.resolve("tsx/esm");
 const nodeArgs = `--import ${tsxLoader}`;
+
+const service = (name, script, restart_delay = 4000) => ({
+  name,
+  script,
+  cwd: __dirname,
+  interpreter: "node",
+  interpreter_args: nodeArgs,
+  autorestart: true,
+  max_restarts: 20,
+  restart_delay,
+  env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
+});
 
 module.exports = {
   apps: [
-    {
-      name: "hive-indexer",
-      // node:sqlite is stable in Node 22.5+; NODE_NO_WARNINGS hides its notice.
-      script: "packages/indexer/src/index.ts",
-      cwd: __dirname,
-      interpreter: "node",
-      interpreter_args: nodeArgs,
-      autorestart: true,
-      max_restarts: 20,
-      restart_delay: 3000,
-      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
-    },
-    {
-      name: "hive-swarm",
-      // The requester + worker agents (1 requester + 3 workers).
-      script: "scripts/run-swarm.ts",
-      cwd: __dirname,
-      interpreter: "node",
-      interpreter_args: nodeArgs,
-      autorestart: true,
-      max_restarts: 20,
-      restart_delay: 5000,
-      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
-    },
-    {
-      name: "hive-telegram",
-      // The human front-door: /risk, /analyze, /explain, /hire, etc.
-      // Only starts if HIVE_TELEGRAM_TOKEN is set (from @BotFather); otherwise it
-      // exits immediately and PM2 leaves it stopped.
-      script: "packages/telegram/src/index.ts",
-      cwd: __dirname,
-      interpreter: "node",
-      interpreter_args: nodeArgs,
-      autorestart: true,
-      max_restarts: 20,
-      restart_delay: 5000,
-      env: { NODE_ENV: "production", NODE_NO_WARNINGS: "1" },
-    },
+    service("hive-indexer", "packages/indexer/src/index.ts", 3000),
+    service("hive-swarm", "scripts/run-swarm.ts", 5000),
+    service("hive-telegram", "packages/telegram/src/index.ts", 5000),
   ],
 };
