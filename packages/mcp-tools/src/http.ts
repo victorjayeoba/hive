@@ -8,6 +8,7 @@
 //
 // Run: `pnpm --filter @hive/mcp-tools http`  (PORT defaults to 8080)
 
+import "./env.js"; // MUST be first: loads repo-root .env so post_task sees the requester key
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

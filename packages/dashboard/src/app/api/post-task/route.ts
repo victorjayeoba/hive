@@ -32,8 +32,8 @@ export async function POST() {
     kind: "summarize",
     prompt: "Summarize the following text in one sentence of at most 20 words.",
     input:
-      "An on-chain labor market lets autonomous agents post tasks, bid to do the work, " +
-      "and settle payment trustlessly — economical only on a fast, near-zero-fee chain.",
+      "Hive is the market for AI work on BOT Chain: you ask for on-chain analysis, worker agents " +
+      "compete in a reverse auction to deliver the cheapest correct answer, and every result settles on-chain.",
   };
 
   const account = privateKeyToAccount(key);

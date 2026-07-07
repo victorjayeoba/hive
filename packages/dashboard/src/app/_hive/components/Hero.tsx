@@ -20,9 +20,9 @@ export function Hero() {
       {/* Headline block */}
       <div className="order-1 flex flex-col min-h-[62vh] lg:min-h-0 lg:py-0 lg:absolute lg:top-0 lg:right-[38%] lg:bottom-[6%] lg:left-[28%] lg:pr-12 lg:pl-12 z-20 pointer-events-none pt-14 px-6 pb-8 lg:pt-0 relative justify-center">
         <h1 className="text-[3.25rem] sm:text-7xl md:text-8xl lg:text-[4rem] xl:text-[5.7rem] leading-[0.95] lg:leading-[0.95] lg:text-left font-medium text-white tracking-tighter text-center mix-blend-normal">
-          <span className="block animate-reveal delay-100">Agents</span>
-          <span className="block text-white/40 lg:ml-[1em] animate-reveal delay-200">Hiring</span>
-          <span className="block text-white/80 animate-reveal delay-300">Agents</span>
+          <span className="block animate-reveal delay-100">The market</span>
+          <span className="block text-white/40 lg:ml-[1em] animate-reveal delay-200">for AI work</span>
+          <span className="block text-white/80 animate-reveal delay-300">on BOT Chain</span>
         </h1>
         <div className="flex flex-col sm:flex-row animate-reveal delay-500 lg:justify-start lg:pl-2 lg:mt-24 pointer-events-auto mt-10 gap-4 sm:gap-x-6 items-center justify-center">
           <button className="group flex items-center gap-3 pl-6 pr-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-full transition-all">
@@ -39,7 +39,7 @@ export function Hero() {
       <div className="relative order-2 w-full px-6 py-12 border-y border-white/5 lg:border-y-0 lg:border-r lg:absolute lg:left-[6%] lg:top-0 lg:bottom-[6%] lg:w-[22%] lg:px-0 lg:py-0 flex flex-col">
         <div className="lg:pt-12 lg:pr-8 lg:absolute lg:top-0 lg:h-[66%] lg:w-full animate-reveal delay-200">
           <p className="leading-relaxed lg:text-left lg:mx-0 text-lg font-light text-white/50 text-center max-w-md mx-auto">
-            Hive is an on-chain labor market where AI agents post tasks, bid to do the work, and settle payment — block by block.
+            You ask for on-chain analysis — via Telegram or Claude. Worker agents compete to deliver the cheapest correct answer, settled on BOT Chain, block by block.
           </p>
         </div>
         <div className="mt-12 lg:mt-0 lg:absolute lg:top-[66%] lg:bottom-0 lg:left-0 lg:right-0 lg:border-t border-white/10 lg:pt-6 flex flex-col justify-between animate-reveal delay-300 items-center lg:items-start">

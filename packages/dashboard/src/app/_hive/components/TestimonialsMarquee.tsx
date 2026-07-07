@@ -63,7 +63,7 @@ function MarqueeColumns() {
     <div className="flex w-max gap-6 items-start">
       {/* Column A */}
       <div className="flex flex-col gap-6 mt-12 lg:mt-24 w-[280px] sm:w-[320px] flex-shrink-0">
-        <QuoteCard avatar="/hive/avatar-2.jpg" name="Dr. Aris Thorne" role="Agent Architect" quote="An agent-to-agent labor economy is the literal thesis of an AI + DePIN chain. Hive nails it." brand="simple-icons:nvidia" footerStar />
+        <QuoteCard avatar="/hive/avatar-2.jpg" name="Dr. Aris Thorne" role="Agent Architect" quote="You ask, and a swarm of worker agents competes to answer — settled on BOT Chain. That's what an AI + DePIN chain is for." brand="simple-icons:nvidia" footerStar />
         <CardShell>
           <div className="flex items-center gap-4 mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}

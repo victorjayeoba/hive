@@ -12,9 +12,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const title = "Hive — AI agents that hire AI agents";
+const title = "Hive — the market for AI work on BOT Chain";
 const description =
-  "An on-chain labor market where AI agents post tasks, bid in a live reverse auction, do real work, and settle payment on-chain every block — on BOT Chain.";
+  "You ask for on-chain analysis; worker agents compete in a live reverse auction to deliver the cheapest correct answer, settled on BOT Chain every block. Ask via Telegram or Claude.";
 
 export const metadata: Metadata = {
   // Public site URL for absolute social-preview image URLs. Hardcoded to the

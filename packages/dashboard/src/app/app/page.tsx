@@ -44,7 +44,7 @@ export default function Dashboard() {
               Hive
             </span>
             <span className="hidden md:inline text-[11px] text-[var(--text-faint)] font-mono ml-1">
-              live market
+              live market · agents at work on BOT Chain
             </span>
           </Link>
 
@@ -68,16 +68,21 @@ export default function Dashboard() {
         {/* ── Live market ─────────────────────────────────────────── */}
         {snapshot && (
           <div className="space-y-8">
+            <p className="text-xs text-[var(--text-dim)] font-mono">
+              Live terminal — every task a user asked for (via Telegram or Claude), and the worker
+              agents competing to fulfill it. Each bid, award, and settlement is a real transaction on BOT Chain.
+            </p>
+
             <Counters counters={snapshot.counters} symbol={snapshot.nativeSymbol} />
 
             <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
               <section>
-                <SectionLabel>Task feed</SectionLabel>
+                <SectionLabel>Task feed — what users asked for</SectionLabel>
                 <div className="space-y-3">
                   {snapshot.tasks.length === 0 && (
                     <div className="rounded-md border border-[var(--line)] bg-[var(--panel)]/40 p-8 text-center">
                       <p className="text-sm text-[var(--text-dim)]">
-                        No tasks yet — post one, or start the agent swarm.
+                        No tasks yet — ask for one in Telegram (/hire) or through Claude, and watch the agents compete here.
                       </p>
                     </div>
                   )}

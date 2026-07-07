@@ -3,6 +3,7 @@
 // worker agents. For a HOSTED, public URL any client can add, see http.ts.
 // Run: `pnpm --filter @hive/mcp-tools start`
 
+import "./env.js"; // MUST be first: loads repo-root .env so post_task sees the requester key
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerTools } from "./register.js";
