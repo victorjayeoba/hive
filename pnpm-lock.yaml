@@ -122,6 +122,9 @@ importers:
 
   packages/indexer:
     dependencies:
+      '@hive/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@hive/shared':
         specifier: workspace:*
         version: link:../shared

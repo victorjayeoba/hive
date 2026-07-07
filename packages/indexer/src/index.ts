@@ -3,6 +3,7 @@ import { WebSocketServer } from "ws";
 import { startPoller } from "./poller.js";
 import { snapshot } from "./queries.js";
 import { putContent, getContent } from "./content.js";
+import { startUserAgentHost } from "./user-agent-host.js";
 import type { UserAgentRow } from "./db.js";
 
 const port = Number(process.env.INDEXER_PORT ?? 4000);
@@ -119,3 +120,8 @@ startPoller(broadcast);
 server.listen(port, () => {
   console.log(`[indexer] http + ws on :${port} — GET /snapshot`);
 });
+
+// Run user agents in THIS process — their exec keys live only in provision.ts's
+// in-memory store, so the host that drives them (and sweeps earnings) must share
+// the same process to read those keys via getExecKey().
+startUserAgentHost();

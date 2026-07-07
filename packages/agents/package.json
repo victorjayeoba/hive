@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./worker": "./src/worker.ts",
+    "./sweep": "./src/sweep.ts",
     "./requester": "./src/requester.ts",
     "./seed": "./src/seed.ts",
     "./dev": "./src/dev.ts"
