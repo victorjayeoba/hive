@@ -45,6 +45,13 @@ const bot = new TelegramBot(token, { polling: true });
 const ADDR = /0x[a-fA-F0-9]{40}/;
 const TXH = /0x[a-fA-F0-9]{64}/;
 
+// Log the endpoints the bot will reach, so misconfig is obvious in the logs.
+console.log(
+  `[telegram] indexer=${process.env.HIVE_INDEXER_HTTP ?? "(default tunnel)"} ` +
+    `rpc=${process.env.RPC_URL ?? "(default)"} ` +
+    `market=${process.env.HIVE_MARKET_ADDRESS ?? "(default)"}`,
+);
+
 const HELP = [
   "🐝 *Hive* — on-chain agent toolkit, in chat.",
   "",
@@ -64,14 +71,22 @@ const HELP = [
 
 const md = { parse_mode: "Markdown" as const, disable_web_page_preview: true };
 
-// small helper: run a handler, catch errors into a friendly message
+// Run a handler; on error, LOG the full detail to the console (PM2 logs) and show
+// a useful message in chat. `fetch failed` from Node hides the real cause in
+// e.cause — surface it so we can actually debug.
 async function run(chatId: number, fn: () => Promise<string>) {
   const thinking = await bot.sendMessage(chatId, "⏳ working…");
   try {
     const text = await fn();
     await bot.editMessageText(text, { chat_id: chatId, message_id: thinking.message_id, ...md });
   } catch (e) {
-    await bot.editMessageText(`⚠️ ${(e as Error).message}`, {
+    const err = e as Error & { cause?: unknown };
+    // Node's fetch wraps the real reason (ECONNREFUSED, ENOTFOUND, timeout) in .cause
+    const cause = err.cause instanceof Error ? err.cause.message : String(err.cause ?? "");
+    const detail = [err.message, cause].filter(Boolean).join(" — ");
+    console.error(`[telegram] command failed: ${detail}`);
+    console.error(err.stack ?? err);
+    await bot.editMessageText(`⚠️ ${detail || "something went wrong"}`, {
       chat_id: chatId,
       message_id: thinking.message_id,
     });
