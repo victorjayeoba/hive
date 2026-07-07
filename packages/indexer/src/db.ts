@@ -52,6 +52,19 @@ db.exec(`
     gas_used  TEXT,
     block     INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS user_agents (
+    exec_address   TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    system_prompt  TEXT NOT NULL,
+    owner_address  TEXT NOT NULL,
+    payout_address TEXT NOT NULL,
+    task_types     TEXT NOT NULL DEFAULT '[]',
+    bid_strategy   TEXT NOT NULL DEFAULT '{}',
+    status         TEXT NOT NULL DEFAULT 'active',
+    created_at     INTEGER NOT NULL,
+    created_sig    TEXT
+  );
 `);
 
 // Wipe the projection if the deployed market address changed (fresh deploy), so a
@@ -90,4 +103,78 @@ export function addEarned(address: string, amount: bigint): void {
 export function recordTx(hash: string, kind: string, gasUsed: bigint | undefined, block: bigint): void {
   db.prepare("INSERT OR IGNORE INTO txs (hash, kind, gas_used, block) VALUES (?, ?, ?, ?)")
     .run(hash, kind, gasUsed?.toString() ?? null, Number(block));
+}
+
+export interface UserAgentInput {
+  execAddress: string;
+  name: string;
+  systemPrompt: string;
+  ownerAddress: string;
+  payoutAddress: string;
+  taskTypes: string[];
+  bidStrategy: Record<string, unknown>;
+  createdSig?: string;
+}
+
+export interface UserAgentRow {
+  execAddress: string;
+  name: string;
+  systemPrompt: string;
+  ownerAddress: string;
+  payoutAddress: string;
+  taskTypes: string[];
+  bidStrategy: Record<string, unknown>;
+  status: string;
+  createdAt: number;
+}
+
+export function insertUserAgent(a: UserAgentInput): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO user_agents
+     (exec_address, name, system_prompt, owner_address, payout_address,
+      task_types, bid_strategy, status, created_at, created_sig)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+  ).run(
+    a.execAddress.toLowerCase(),
+    a.name,
+    a.systemPrompt,
+    a.ownerAddress.toLowerCase(),
+    a.payoutAddress.toLowerCase(),
+    JSON.stringify(a.taskTypes),
+    JSON.stringify(a.bidStrategy),
+    Date.now(),
+    a.createdSig ?? null,
+  );
+}
+
+function rowToUserAgent(r: any): UserAgentRow {
+  return {
+    execAddress: r.exec_address,
+    name: r.name,
+    systemPrompt: r.system_prompt,
+    ownerAddress: r.owner_address,
+    payoutAddress: r.payout_address,
+    taskTypes: JSON.parse(r.task_types),
+    bidStrategy: JSON.parse(r.bid_strategy),
+    status: r.status,
+    createdAt: r.created_at,
+  };
+}
+
+export function getUserAgent(execAddress: string): UserAgentRow | undefined {
+  const r = db.prepare("SELECT * FROM user_agents WHERE exec_address = ?").get(execAddress.toLowerCase());
+  return r ? rowToUserAgent(r) : undefined;
+}
+
+export function listUserAgents(): UserAgentRow[] {
+  return (db.prepare("SELECT * FROM user_agents ORDER BY created_at DESC").all() as any[]).map(rowToUserAgent);
+}
+
+export function setUserAgentStatus(execAddress: string, status: string): void {
+  db.prepare("UPDATE user_agents SET status = ? WHERE exec_address = ?").run(status, execAddress.toLowerCase());
+}
+
+export function countAgentsByOwner(ownerAddress: string): number {
+  const r = db.prepare("SELECT COUNT(*) c FROM user_agents WHERE owner_address = ?").get(ownerAddress.toLowerCase()) as { c: number };
+  return r.c;
 }
