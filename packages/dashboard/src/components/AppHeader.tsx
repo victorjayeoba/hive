@@ -3,6 +3,43 @@ import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useState } from "react";
 
+// Compact connect control styled to match the header buttons, wrapping
+// RainbowKit's modal logic via ConnectButton.Custom.
+function WalletButton() {
+  const btn =
+    "rounded-sm px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors bg-[var(--amber)] text-[#1a1206] hover:bg-[#ffd787]";
+  const ghost =
+    "rounded-sm border border-[var(--line)] px-3 py-1.5 text-xs font-mono text-[var(--text-dim)] whitespace-nowrap hover:border-[var(--line-strong)] hover:text-[var(--text)]";
+  return (
+    <ConnectButton.Custom>
+      {({ account, chain, openConnectModal, openAccountModal, openChainModal, mounted }) => {
+        const ready = mounted;
+        const connected = ready && account && chain;
+        if (!ready) return <div className="h-[30px] w-[112px] rounded-sm bg-[var(--panel)]/40" aria-hidden />;
+        if (!connected) {
+          return (
+            <button type="button" onClick={openConnectModal} className={btn}>
+              Connect Wallet
+            </button>
+          );
+        }
+        if (chain.unsupported) {
+          return (
+            <button type="button" onClick={openChainModal} className={`${btn} bg-red-500 text-white hover:bg-red-400`}>
+              Wrong network
+            </button>
+          );
+        }
+        return (
+          <button type="button" onClick={openAccountModal} className={ghost}>
+            {account.displayName}
+          </button>
+        );
+      }}
+    </ConnectButton.Custom>
+  );
+}
+
 const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL ?? "https://t.me/usehive_bot";
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? "";
 
@@ -28,10 +65,17 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
             onClick={() => { navigator.clipboard.writeText(MCP_URL); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
             className="hidden md:inline-flex text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]"
           >{copied ? "copied ✓" : "Add to Claude"}</button>
-          <Link href="/app/create" className="text-xs px-3 py-1.5 rounded-sm bg-[var(--amber)] text-[#1a1206] font-semibold whitespace-nowrap">Create Agent</Link>
-          {/* RainbowKit's standard modal: supports many desktop wallets + mobile
-              wallets via WalletConnect deeplinks. Requires NEXT_PUBLIC_WC_PROJECT_ID. */}
-          <ConnectButton showBalance={false} chainStatus="none" accountStatus="address" />
+          {/* Secondary: outlined so it doesn't compete with the primary Connect CTA. */}
+          <Link
+            href="/app/create"
+            className="rounded-sm border border-[var(--amber)]/60 px-3 py-1.5 text-xs font-semibold text-[var(--amber)] whitespace-nowrap hover:bg-[var(--amber)]/10"
+          >
+            Create Agent
+          </Link>
+          {/* RainbowKit modal (many desktop wallets + mobile via WalletConnect),
+              rendered custom so it matches the compact header style instead of
+              RainbowKit's large default pill. Requires NEXT_PUBLIC_WC_PROJECT_ID. */}
+          <WalletButton />
         </div>
       </div>
     </header>
