@@ -9,7 +9,8 @@
   },
   "exports": {
     "./tools": "./src/tools.ts",
-    "./market": "./src/market.ts"
+    "./market": "./src/market.ts",
+    "./content": "./src/content.ts"
   },
   "scripts": {
     "start": "tsx src/server.ts",

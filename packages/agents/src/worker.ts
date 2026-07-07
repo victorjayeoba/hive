@@ -73,7 +73,7 @@ export async function runWorker(privateKey: `0x${string}`, label: string, pollMs
 
   async function doWork(id: bigint) {
     const t = await m.read.getTask([id]);
-    const spec = readSpec(t.specHash);
+    const spec = await readSpec(t.specHash);
     if (!spec) { console.log(`[${label}] no spec for task ${id}`); return; }
     console.log(`[${label}] executing task ${id} (${spec.kind})`);
     const result = await execute(spec);

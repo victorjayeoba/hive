@@ -14,7 +14,8 @@ import {
   traceMoneyFlow,
   getChainStats,
 } from "@hive/mcp-tools/tools";
-import { getMarketStats } from "@hive/mcp-tools/market";
+import { getMarketStats, getTaskStatus, postTask } from "@hive/mcp-tools/market";
+import { publishTask, getContent } from "@hive/mcp-tools/content";
 
 const token = process.env.HIVE_TELEGRAM_TOKEN;
 if (!token) {
@@ -29,12 +30,16 @@ const TXH = /0x[a-fA-F0-9]{64}/;
 const HELP = [
   "🐝 *Hive* — on-chain agent toolkit, in chat.",
   "",
+  "*Quick tools* (instant):",
   "*/risk* `0x…wallet` — risk score + findings",
   "*/analyze* `0x…wallet` — full wallet overview",
   "*/explain* `0x…txhash` — decode a transaction",
   "*/trace* `0x…wallet` — trace money flow",
-  "*/stats* — live Hive market activity",
-  "*/chain* — BOT Chain network stats",
+  "*/stats* — live Hive market · */chain* — BOT Chain stats",
+  "",
+  "*Hire the market* (agents compete):",
+  "*/hire* `<what you want done>` — posts a task on-chain; worker",
+  "agents bid, do the work, and settle. Watch it on the dashboard.",
   "",
   "The same tools Hive's worker agents use — powered by BOT Chain.",
 ].join("\n");
@@ -153,5 +158,72 @@ bot.onText(/^\/chain/, (msg) => {
     ].filter(Boolean).join("\n");
   });
 });
+
+// --- /hire: post a REAL task to the market and let worker agents fulfill it ---
+// This is the loop: human demand → agents compete on-chain → result delivered.
+bot.onText(/^\/hire(?:\s+([\s\S]+))?/, (msg, m) => {
+  const chatId = msg.chat.id;
+  const request = m?.[1]?.trim();
+  if (!request) {
+    return bot.sendMessage(
+      chatId,
+      "Usage: `/hire <what you want done>`\nExample: `/hire analyze wallet 0x31fc3688295309a2a08627ddd1d65deeee85c201`",
+      md,
+    );
+  }
+
+  // Route the request into a task spec. Wallet/tx in the text → on-chain task.
+  const addr = request.match(ADDR)?.[0];
+  const tx = request.match(TXH)?.[0];
+  const spec = tx
+    ? { kind: "explain-tx", prompt: "Explain in plain English what this BOT Chain transaction did.", input: tx }
+    : addr
+      ? { kind: "analyze-wallet", prompt: "Analyze this BOT Chain wallet and give a plain-English risk assessment.", input: addr }
+      : { kind: "summarize", prompt: "Complete this request concisely.", input: request };
+
+  run(chatId, async () => {
+    // 1. publish content to the indexer, 2. post the task on-chain
+    const { specHash, inputHash } = await publishTask(spec);
+    const posted = await postTask({ specHash, inputHash });
+    if ("error" in posted) return `⚠️ Couldn't post the task: ${posted.error}`;
+
+    await bot.sendMessage(
+      chatId,
+      `📤 *Task posted to the Hive market.*\nWorker agents are bidding now — watch it live on the dashboard.\n[Posted tx](${posted.explorer})`,
+      md,
+    );
+
+    // 3. poll the market for THIS task (matched by specHash) until settled
+    const result = await pollForResult(specHash, 90_000);
+    return result ?? "⏳ The task is live on-chain, but no worker has settled it yet. Track it on the dashboard.";
+  });
+});
+
+/** Poll the market snapshot for the settled task with this specHash, then fetch its result. */
+async function pollForResult(specHash: string, timeoutMs: number): Promise<string | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    try {
+      const snap = await fetchSnapshot();
+      const t = (snap.tasks ?? []).find(
+        (x: any) => x.spec_hash === specHash && x.status === 5 && x.result_hash,
+      );
+      if (t?.result_hash) {
+        const result = await getContent<string>(t.result_hash);
+        if (result) return `✅ *Result*\n\n${result}\n\n[Settled on-chain](${t.settledUrl ?? ""})`;
+      }
+    } catch {
+      /* keep polling */
+    }
+  }
+  return null;
+}
+
+async function fetchSnapshot(): Promise<any> {
+  const base = process.env.HIVE_INDEXER_HTTP ?? "https://cir-comes-wines-split.trycloudflare.com";
+  const res = await fetch(`${base}/snapshot`);
+  return res.json();
+}
 
 console.log("[telegram] Hive bot up — polling");

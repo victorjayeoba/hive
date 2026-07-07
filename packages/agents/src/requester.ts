@@ -47,8 +47,8 @@ export async function runRequester(
       const id = e.args.id as bigint;
       const t = await m.read.getTask([id]);
       if (t.status !== Status.Submitted || t.requester.toLowerCase() !== me) continue;
-      const spec = readSpec(t.specHash) ?? posted.get(id.toString());
-      const result = readResult(t.resultHash);
+      const spec = (await readSpec(t.specHash)) ?? posted.get(id.toString());
+      const result = await readResult(t.resultHash);
       const ok = spec && result ? verify(spec, result) : false;
       if (ok) {
         await m.write.accept([id]);
