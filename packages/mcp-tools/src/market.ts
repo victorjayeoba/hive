@@ -7,11 +7,15 @@ import { createWalletClient, http, parseEther, defineChain, type Hex } from "vie
 import { privateKeyToAccount } from "viem/accounts";
 import { explorerTx } from "./chain.js";
 
-const INDEXER_HTTP = process.env.HIVE_INDEXER_HTTP ?? "https://cir-comes-wines-split.trycloudflare.com";
-const RPC_URL = process.env.RPC_URL ?? "https://rpc.bohr.life";
-const CHAIN_ID = Number(process.env.CHAIN_ID ?? 968);
-const MARKET_ADDRESS = (process.env.HIVE_MARKET_ADDRESS ??
-  "0x31fc3688295309a2a08627ddd1d65deeee85c201") as `0x${string}`;
+// Read env at CALL time (functions), not import time — consumers like the bot
+// load .env after this module is imported, so module-level consts would capture
+// stale defaults.
+const indexerBase = () => process.env.HIVE_INDEXER_HTTP ?? "http://localhost:4000";
+const rpcUrl = () => process.env.RPC_URL ?? "https://rpc.bohr.life";
+const chainId = () => Number(process.env.CHAIN_ID ?? 968);
+const marketAddress = () =>
+  (process.env.HIVE_MARKET_ADDRESS ??
+    "0x31fc3688295309a2a08627ddd1d65deeee85c201") as `0x${string}`;
 
 // Only the postTask signature is needed here; full ABI lives in @hive/shared.
 const POST_TASK_ABI = [
@@ -29,12 +33,13 @@ const POST_TASK_ABI = [
   },
 ] as const;
 
-const botChain = defineChain({
-  id: CHAIN_ID,
-  name: "bot-chain",
-  nativeCurrency: { name: "BOT", symbol: process.env.NATIVE_SYMBOL ?? "BOT", decimals: 18 },
-  rpcUrls: { default: { http: [RPC_URL] } },
-});
+const botChain = () =>
+  defineChain({
+    id: chainId(),
+    name: "bot-chain",
+    nativeCurrency: { name: "BOT", symbol: process.env.NATIVE_SYMBOL ?? "BOT", decimals: 18 },
+    rpcUrls: { default: { http: [rpcUrl()] } },
+  });
 
 // --- get_market_stats ------------------------------------------------------
 
@@ -127,10 +132,10 @@ export async function postTask(args: {
     };
   }
   const account = privateKeyToAccount(key);
-  const wallet = createWalletClient({ account, chain: botChain, transport: http(RPC_URL) });
+  const wallet = createWalletClient({ account, chain: botChain(), transport: http(rpcUrl()) });
 
   const txHash = await wallet.writeContract({
-    address: MARKET_ADDRESS,
+    address: marketAddress(),
     abi: POST_TASK_ABI,
     functionName: "postTask",
     args: [
@@ -153,7 +158,7 @@ export async function postTask(args: {
 // --- internal --------------------------------------------------------------
 
 async function fetchSnapshot(): Promise<any> {
-  const res = await fetch(`${INDEXER_HTTP}/snapshot`, { headers: { accept: "application/json" } });
+  const res = await fetch(`${indexerBase()}/snapshot`, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`indexer ${res.status} — is the Hive backend reachable?`);
   return res.json();
 }

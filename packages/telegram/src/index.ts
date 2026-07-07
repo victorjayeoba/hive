@@ -254,7 +254,7 @@ async function pollForResult(specHash: string, timeoutMs: number): Promise<strin
 }
 
 async function fetchSnapshot(): Promise<any> {
-  const base = process.env.HIVE_INDEXER_HTTP ?? "https://cir-comes-wines-split.trycloudflare.com";
+  const base = process.env.HIVE_INDEXER_HTTP ?? "http://localhost:4000";
   const res = await fetch(`${base}/snapshot`);
   return res.json();
 }

@@ -5,8 +5,11 @@
 
 import { keccak256, toHex } from "viem";
 
-const INDEXER_HTTP =
-  process.env.HIVE_INDEXER_HTTP ?? "https://cir-comes-wines-split.trycloudflare.com";
+// Read at CALL time, not import time — the bot loads .env after this module is
+// imported, so a module-level const would capture the wrong (default) value.
+function indexerBase(): string {
+  return process.env.HIVE_INDEXER_HTTP ?? "http://localhost:4000";
+}
 
 /** keccak256 of a string — the on-chain content commitment. */
 export function hashContent(value: string): `0x${string}` {
@@ -15,7 +18,7 @@ export function hashContent(value: string): `0x${string}` {
 
 /** Publish a value under its hash key to the indexer content store. */
 export async function putContent(key: string, value: unknown): Promise<void> {
-  const res = await fetch(`${INDEXER_HTTP}/content`, {
+  const res = await fetch(`${indexerBase()}/content`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ key, value }),
@@ -25,7 +28,7 @@ export async function putContent(key: string, value: unknown): Promise<void> {
 
 /** Read content by hash key from the indexer. Returns undefined if absent. */
 export async function getContent<T = unknown>(key: string): Promise<T | undefined> {
-  const res = await fetch(`${INDEXER_HTTP}/content/${encodeURIComponent(key)}`);
+  const res = await fetch(`${indexerBase()}/content/${encodeURIComponent(key)}`);
   if (res.status === 404) return undefined;
   if (!res.ok) throw new Error(`content GET failed: ${res.status}`);
   const { value } = (await res.json()) as { value: T };
