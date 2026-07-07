@@ -4,7 +4,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useState } from "react";
 
-const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL ?? "https://t.me/";
+const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL ?? "https://t.me/usehive_bot";
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? "";
 
 export function AppHeader({ liveBlock }: { liveBlock?: number }) {
