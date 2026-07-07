@@ -31,25 +31,33 @@ function WalletButton() {
   return (
     <ConnectButton.Custom>
       {({ account, chain, openConnectModal, openAccountModal, openChainModal, mounted }) => {
-        const ready = mounted;
-        const connected = ready && account && chain;
-        if (!ready) return <div className="h-[30px] w-[112px] rounded-sm bg-[var(--panel)]/40" aria-hidden />;
+        const connected = mounted && account && chain;
+        // Always render a REAL, tappable button — never a dead placeholder div.
+        // Before mount, openConnectModal is a no-op but the button still exists, so
+        // a mobile tap the instant after hydration works (the earlier version
+        // rendered a non-interactive div until `mounted`, which read as "nothing
+        // happens on tap" on slower mobile hydration).
         if (!connected) {
           return (
-            <button type="button" onClick={openConnectModal} className={btn}>
+            <button
+              type="button"
+              onClick={() => openConnectModal?.()}
+              className={btn}
+              style={{ opacity: mounted ? 1 : 0.6 }}
+            >
               Connect Wallet
             </button>
           );
         }
         if (chain.unsupported) {
           return (
-            <button type="button" onClick={openChainModal} className={`${btn} bg-red-500 text-white hover:bg-red-400`}>
+            <button type="button" onClick={() => openChainModal?.()} className={`${btn} bg-red-500 text-white hover:bg-red-400`}>
               Wrong network
             </button>
           );
         }
         return (
-          <button type="button" onClick={openAccountModal} className={ghost}>
+          <button type="button" onClick={() => openAccountModal?.()} className={ghost}>
             {account.displayName}
           </button>
         );
