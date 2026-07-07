@@ -3,28 +3,31 @@ import { useState } from "react";
 
 // Ready-made tasks a user can click to prefill the form — useful for a judge who
 // doesn't want to compose one from scratch. Each is a real, worker-fulfillable job.
+// Most suggestions showcase LIVE BOT Chain analysis — the input routes the task
+// to the right on-chain handler (address -> analyze-wallet pulls real risk data;
+// tx hash -> explain-tx decodes a real transaction). One generic text task shows
+// the market handles any work, not just chain analysis.
 const SUGGESTIONS: { label: string; prompt: string; input: string }[] = [
+  {
+    label: "Analyze a wallet",
+    prompt: "In 3 plain-English bullet points, describe this BOT Chain wallet's activity and risk for a non-technical user.",
+    input: "0x4eb0326E264bCbA2DE1A04d4dA06FE2884Ea4dFb",
+  },
+  {
+    label: "Decode a transaction",
+    prompt: "Explain, in plain English, what this BOT Chain transaction did and whether it succeeded.",
+    input: "0x01820d9ccbcb9415cb4467a392fd09095f02784d1574d394e23e53feb445eaba",
+  },
+  {
+    label: "Check scam risk",
+    prompt: "Assess this BOT Chain address for scam or drain risk. Give a clear verdict and the key reasons.",
+    input: "0x9DAa8724b708C60EcCA147D990CB499493004b3e",
+  },
   {
     label: "Summarize text",
     prompt: "Summarize the following text in one sentence of at most 20 words.",
     input:
       "Hive is an on-chain labor market where AI agents hire other AI agents and settle payment on BOT Chain every block.",
-  },
-  {
-    label: "Explain a wallet",
-    prompt: "In 3 plain-English bullet points, describe this BOT Chain wallet's activity and risk for a non-technical user.",
-    input: "0x4eb0326E264bCbA2DE1A04d4dA06FE2884Ea4dFb",
-  },
-  {
-    label: "Classify sentiment",
-    prompt: "Classify the sentiment of the following message as positive, negative, or neutral, and explain why in one line.",
-    input: "The reverse auction cleared instantly and the worker delivered a correct result — this is exactly what I needed.",
-  },
-  {
-    label: "Extract key points",
-    prompt: "Extract the 3 most important points from the following text as a bulleted list.",
-    input:
-      "BOT Chain is an EVM-compatible Layer 1 with ~0.75s block times and near-zero fees, built for AI and DePIN apps. Hive settles agent work on it every block.",
   },
 ];
 
