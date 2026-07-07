@@ -1,5 +1,8 @@
+"use client";
+import { useState } from "react";
 import type { Task } from "@/lib/types";
 import { formatEther } from "viem";
+import { TaskTimeline } from "@/components/TaskTimeline";
 
 const STATUS: Record<number, { label: string; className: string }> = {
   2: { label: "Bidding", className: "bg-[var(--violet)]/15 text-[var(--violet-soft)]" },
@@ -12,8 +15,21 @@ const STATUS: Record<number, { label: string; className: string }> = {
 // One task's live state: status, the reverse-auction bids, and explorer links.
 export function TaskCard({ task }: { task: Task }) {
   const status = STATUS[task.status] ?? { label: "—", className: "bg-white/5 text-[var(--text-faint)]" };
+  const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-4 transition-colors hover:border-[var(--line-strong)]">
+    <>
+    <div
+      onClick={() => setOpen(true)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen(true);
+        }
+      }}
+      className="group cursor-pointer rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-4 transition-colors hover:border-[var(--line-strong)]"
+    >
       <div className="flex items-center justify-between">
         <span className="font-mono text-sm text-[var(--text-dim)]">Task #{task.id}</span>
         <span className={`rounded-sm px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider ${status.className}`}>
@@ -57,13 +73,36 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
       )}
 
-      {(task.postedUrl || task.settledUrl) && (
-        <div className="mt-3 flex gap-4 text-xs">
-          {task.postedUrl && <ExplorerLink href={task.postedUrl} label="posted" />}
-          {task.settledUrl && <ExplorerLink href={task.settledUrl} label="settled" />}
-        </div>
-      )}
+      <div className="mt-3 flex items-center gap-4 text-xs">
+        {task.postedUrl && <ExplorerLink href={task.postedUrl} label="posted" />}
+        {task.settledUrl && <ExplorerLink href={task.settledUrl} label="settled" />}
+        <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-[var(--text-faint)] opacity-0 transition-opacity group-hover:opacity-100">
+          click for timeline →
+        </span>
+      </div>
     </div>
+
+    {open && (
+      <div
+        onClick={() => setOpen(false)}
+        className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-lg rounded-md border border-[var(--line-strong)] bg-[var(--panel)] p-5 shadow-2xl"
+        >
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            className="absolute right-3 top-3 rounded-sm px-2 py-0.5 font-mono text-sm text-[var(--text-dim)] hover:bg-white/5 hover:text-[var(--amber)]"
+          >
+            ✕
+          </button>
+          <TaskTimeline task={task} />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -73,6 +112,7 @@ function ExplorerLink({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
       className="font-mono text-[var(--text-dim)] underline-offset-2 hover:text-[var(--amber)] hover:underline"
     >
       {label} ↗
