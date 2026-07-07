@@ -26,10 +26,28 @@ export interface Task {
 
 export interface Agent {
   address: string;
+  name: string;
+  role: "user-agent" | "worker" | "requester";
   completed: number;
-  timed_out: number;
+  timedOut: number;
   disputed: number;
   earned: string;
+  reliability: number;
+  liveStatus: string;
+  owner?: string;
+  payout?: string;
+}
+
+export interface UserAgentConfig {
+  execAddress: string;
+  name: string;
+  systemPrompt: string;
+  ownerAddress: string;
+  payoutAddress: string;
+  taskTypes: string[];
+  bidStrategy: Record<string, unknown>;
+  status: string;
+  createdAt: number;
 }
 
 export interface Counters {
