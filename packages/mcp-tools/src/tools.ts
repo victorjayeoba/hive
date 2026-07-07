@@ -17,6 +17,7 @@ import {
   type Address,
   type Hex,
 } from "./chain.js";
+import { decodeHiveCall, isKnownContract } from "./abi-decode.js";
 import { formatEther } from "viem";
 
 // --- getWalletOverview -----------------------------------------------------
@@ -156,6 +157,27 @@ export interface DecodedTx {
 /** Decode a transaction into a readable form (method + parameters). */
 export async function decodeTransaction(hash: string): Promise<DecodedTx> {
   const t = await bs<TxItem>(`/transactions/${hash}`);
+
+  let decodedCall = t.decoded_input?.method_call ?? null;
+  let params =
+    t.decoded_input?.parameters.map((p) => ({
+      name: p.name,
+      type: p.type,
+      value: String(p.value),
+    })) ?? [];
+
+  // The explorer can't decode UNVERIFIED contracts — it returns a bare selector
+  // like `0xb8adaa11`. If the target is a contract we hold the ABI for
+  // (HiveMarket), decode it ourselves so the user sees `reject(taskId: 15)`
+  // instead of hex. This is the /explain payoff on our own on-chain activity.
+  if (!decodedCall && isKnownContract(t.to?.hash)) {
+    const local = decodeHiveCall(t.raw_input);
+    if (local) {
+      decodedCall = local.call;
+      params = local.params;
+    }
+  }
+
   return {
     hash: t.hash,
     status: t.result,
@@ -164,13 +186,8 @@ export async function decodeTransaction(hash: string): Promise<DecodedTx> {
     toName: t.to?.name ?? null,
     value: fmtNative(t.value),
     method: t.method,
-    decodedCall: t.decoded_input?.method_call ?? null,
-    params:
-      t.decoded_input?.parameters.map((p) => ({
-        name: p.name,
-        type: p.type,
-        value: String(p.value),
-      })) ?? [],
+    decodedCall,
+    params,
     fee: t.fee ? fmtNative(t.fee.value) : null,
     explorer: explorerTx(t.hash),
   };
