@@ -14,7 +14,8 @@
   },
   "scripts": {
     "start": "tsx src/server.ts",
-    "dev": "tsx src/server.ts"
+    "dev": "tsx src/server.ts",
+    "http": "tsx src/http.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
