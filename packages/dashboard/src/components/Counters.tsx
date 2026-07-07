@@ -11,11 +11,11 @@ export function Counters({ counters, symbol }: { counters: C; symbol: string }) 
     { label: `Value settled · ${symbol}`, value: fmt(counters.settledValue), accent: true },
   ];
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-[var(--line)] bg-[var(--line)] sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-[var(--line)] bg-[var(--line)] sm:grid-cols-3 lg:grid-cols-5">
       {stats.map((s) => (
-        <div key={s.label} className="bg-[var(--panel)]/60 p-4">
+        <div key={s.label} className="bg-[var(--panel)]/60 p-3 sm:p-4">
           <div
-            className={`text-2xl font-semibold tabular-nums ${s.accent ? "text-[var(--amber)]" : "text-[var(--text)]"}`}
+            className={`text-xl sm:text-2xl font-semibold tabular-nums ${s.accent ? "text-[var(--amber)]" : "text-[var(--text)]"}`}
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             {s.value}

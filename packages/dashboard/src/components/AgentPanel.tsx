@@ -14,12 +14,12 @@ export function AgentPanel({ agents }: { agents: Agent[] }) {
     );
   }
   return (
-    <div className="space-y-2">
+    <div className="flex snap-x gap-3 overflow-x-auto pb-2 lg:block lg:snap-none lg:space-y-2 lg:overflow-visible lg:pb-0">
       {agents.map((a) => (
         <Link
           key={a.address}
           href={`/app/agents/${a.address}`}
-          className="block rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-3 transition-colors hover:border-[var(--line-strong)]"
+          className="block w-[220px] shrink-0 snap-start rounded-md border border-[var(--line)] bg-[var(--panel)]/50 p-3 transition-colors hover:border-[var(--line-strong)] lg:w-auto lg:shrink"
         >
           <div className="flex items-center gap-2.5">
             <AgentAvatar seed={a.address} className="h-6 w-6 shrink-0 rounded-full ring-1 ring-[var(--line-strong)]" />

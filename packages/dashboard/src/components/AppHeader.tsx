@@ -22,13 +22,13 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
             </span>
           )}
         </Link>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <a href={TG_URL} target="_blank" rel="noreferrer" className="text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]">Telegram</a>
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <a href={TG_URL} target="_blank" rel="noreferrer" className="hidden sm:inline-flex text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]">Telegram</a>
           <button
             onClick={() => { navigator.clipboard.writeText(MCP_URL); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-            className="text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]"
+            className="hidden md:inline-flex text-xs px-2 py-1.5 rounded-sm border border-[var(--line)]"
           >{copied ? "copied ✓" : "Add to Claude"}</button>
-          <Link href="/app/create" className="text-xs px-3 py-1.5 rounded-sm bg-[var(--amber)] text-[#1a1206] font-semibold">Create Agent</Link>
+          <Link href="/app/create" className="text-xs px-3 py-1.5 rounded-sm bg-[var(--amber)] text-[#1a1206] font-semibold whitespace-nowrap">Create Agent</Link>
           {/* RainbowKit's standard modal: supports many desktop wallets + mobile
               wallets via WalletConnect deeplinks. Requires NEXT_PUBLIC_WC_PROJECT_ID. */}
           <ConnectButton showBalance={false} chainStatus="none" accountStatus="address" />

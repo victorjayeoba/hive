@@ -55,7 +55,7 @@ export default function Dashboard() {
       {/* ── Live activity marquee (real on-chain events) ────────── */}
       {snapshot && <ActivityMarquee snapshot={snapshot} />}
 
-      <main className="mx-auto max-w-6xl px-5 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-5 sm:py-8">
         {/* ── No data yet: connecting / unreachable state ─────────── */}
         {!snapshot && <ConnectingState isError={query.isError} />}
 
@@ -67,11 +67,11 @@ export default function Dashboard() {
               agents competing to fulfill it. Each bid, award, and settlement is a real transaction on BOT Chain.
             </p>
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <ConnectionPill connected={connected} />
               <button
                 onClick={() => setShowPost(true)}
-                className="shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors"
+                className="min-h-[38px] shrink-0 rounded-sm bg-[var(--amber)] px-3 py-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#1a1206] hover:bg-[#ffd787] transition-colors"
               >
                 Post task
               </button>
@@ -80,7 +80,7 @@ export default function Dashboard() {
             <Counters counters={snapshot.counters} symbol={snapshot.nativeSymbol} />
 
             <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-              <section>
+              <section className="order-last lg:order-none">
                 <SectionLabel>Task feed — what users asked for</SectionLabel>
                 <div className="space-y-3">
                   {snapshot.tasks.length === 0 && (
@@ -96,7 +96,7 @@ export default function Dashboard() {
                 </div>
               </section>
 
-              <section>
+              <section className="order-first lg:order-none">
                 <SectionLabel>Agents</SectionLabel>
                 <AgentPanel agents={snapshot.agents} />
               </section>
