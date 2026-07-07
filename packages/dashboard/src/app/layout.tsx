@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Providers } from "./providers";
 import "./globals.css";
 
 // Self-hosted Inter (no Google Fonts CDN call). Exposed as a CSS variable so the
@@ -46,11 +45,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // The wallet stack (WagmiProvider + QueryClientProvider + RainbowKitProvider)
+  // lives in the /app segment's layout, NOT here. RainbowKitProvider eagerly runs
+  // react-query hooks the moment it mounts, which throws "No QueryClient set"
+  // during the static prerender of the marketing "/" page (that page needs no
+  // wallet). The /app layout is already client-only, so the providers are safe
+  // there. See src/app/app/layout.tsx.
   return (
     <html lang="en" className={inter.variable}>
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

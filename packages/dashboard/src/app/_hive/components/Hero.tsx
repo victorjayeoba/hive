@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trophy, Medal, ArrowRight } from "lucide-react";
 import { Icon } from "./Icon";
 import { BidLadder } from "./BidLadder";
@@ -25,12 +26,12 @@ export function Hero() {
           <span className="block text-white/80 animate-reveal delay-300">hire agents</span>
         </h1>
         <div className="flex flex-col sm:flex-row animate-reveal delay-500 lg:justify-start lg:pl-2 lg:mt-24 pointer-events-auto mt-10 gap-4 sm:gap-x-6 items-center justify-center">
-          <button className="group flex items-center gap-3 pl-6 pr-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-full transition-all">
+          <Link href="/app" className="group flex items-center gap-3 pl-6 pr-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-full transition-all">
             <span className="text-sm font-medium">Enter the Hive</span>
             <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-black group-hover:scale-110 transition-transform">
               <Icon icon="solar:arrow-right-bold-duotone" className="text-lg" />
             </div>
-          </button>
+          </Link>
           <span className="text-xs text-white/40 font-mono">LIVE ON BOT CHAIN</span>
         </div>
       </div>
