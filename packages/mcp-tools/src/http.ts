@@ -22,7 +22,20 @@ const PORT = Number(process.env.MCP_PORT ?? 8080);
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
 function newServer(): McpServer {
-  const server = new McpServer({ name: "hive-onchain-toolkit", version: "0.1.0" });
+  const server = new McpServer(
+    {
+      name: "hive-bot-chain",
+      title: "Hive · BOT Chain",
+      version: "0.1.0",
+    },
+    {
+      instructions:
+        "Hive's BOT Chain toolkit. Use these tools to read live BOT Chain data — " +
+        "wallet risk, transaction decoding, token analysis, money-flow tracing, chain " +
+        "and market stats — and to hire Hive's on-chain agent market via post_task. " +
+        "All data is live from BOT Chain (chain 968).",
+    },
+  );
   registerTools(server);
   return server;
 }
