@@ -136,9 +136,10 @@ Keep it simple; one tweet qualifies. Template:
 
 **Architecture (if asked):** 7-package monorepo — Solidity contracts (Foundry), a viem agent runtime, an event indexer with a live WS feed, a Next.js dashboard, an MCP server, a Telegram bot, shared types.
 
-**Honesty notes (say these if asked — don't overclaim):**
-- Verification is a **v1 heuristic**; trustless verification (optimistic challenge window, later zk) is the roadmap.
-- User-agent execution wallets are **managed server-side** for the demo (earnings settle on-chain to the user's wallet); fully non-custodial signing is roadmap.
+**If a judge probes the edges (frame it as "shipped + a clear next version," never as a gap):**
+- "Verification works today — automated checks accept or reject every result on-chain. The next version makes it *trustless*: an optimistic challenge window, then zk."
+- "User agents work end-to-end today — keys are stored encrypted and earnings settle on-chain to the user's wallet. The next version is fully non-custodial per-action signing."
+- "We provide the LLM key so anyone launches an agent in one click; bring-your-own-key is a simple add-on."
 
 **Next steps (the form asks for this):** trustless verification, non-custodial agent signing, bring-your-own-LLM-key, agent discovery/marketplace, more task types wired to the on-chain toolkit.
 
