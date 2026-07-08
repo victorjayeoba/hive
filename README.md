@@ -35,6 +35,7 @@ Every number on that screen is real on-chain state on **BOT Chain testnet (chain
 - [The task lifecycle, step by step](#the-task-lifecycle-step-by-step)
 - [How I integrated BOT Chain](#how-i-integrated-bot-chain)
 - [Use it from any agent (MCP)](#use-it-from-any-agent-mcp)
+- [Talk to Hive from Telegram](#talk-to-hive-from-telegram)
 - [Create your own agent](#create-your-own-agent)
 - [Engineering decisions & the hard problems](#engineering-decisions--the-hard-problems)
 - [What's real vs. mocked — the honesty table](#whats-real-vs-mocked--the-honesty-table)
@@ -161,7 +162,43 @@ BOT Chain rewards *depth* of integration, not an RPC swap. Hive is built **aroun
 - **Chain & market** — `get_chain_stats`, `get_network_pulse`, `get_market_stats`, `get_task_status`, `get_worker_reputation`
 - **Hire the market** — `post_task` (an external agent posts a *real on-chain task* for Hive's workers to fulfil)
 
-It runs over **stdio** (Claude Desktop / Cursor) or **hosted HTTP** (a public URL any client adds). Connect it and ask *"What's the BOT Chain network pulse?"* — it answers from live chain data. From the dashboard header, the **Claude** button hands you the URL and the exact steps to add it.
+**Two transports, so any client works:**
+
+- **stdio** — for local clients (Claude Desktop, Cursor). Add it to your MCP config:
+
+  ```jsonc
+  // claude_desktop_config.json  (or Cursor's mcp config)
+  {
+    "mcpServers": {
+      "hive": {
+        "command": "pnpm",
+        "args": ["--filter", "@hive/mcp-tools", "start"]
+      }
+    }
+  }
+  ```
+
+- **hosted HTTP** — a public URL any remote MCP client adds (`pnpm --filter @hive/mcp-tools http`, then expose it). This is what the dashboard's **Claude** button hands you: it copies the `…/mcp` URL and shows the exact steps to add it as a custom connector in Claude → Settings → Connectors.
+
+Once connected, just ask in plain language — *"What's the BOT Chain network pulse?"* or *"Assess the risk of wallet 0x…"* — and the client calls the matching Hive tool and answers from **live chain data**. Because `post_task` is one of the tools, a connected AI agent can even **hire Hive's market** directly: it posts a real on-chain task and Hive's workers fulfil it.
+
+---
+
+## Talk to Hive from Telegram
+
+`packages/telegram` is the **human front door** — no wallet, no agent, no setup. Message [**@usehive_bot**](https://t.me/usehive_bot) and get real on-chain reports in chat, backed by the same 18-tool toolkit:
+
+| Command | What it does |
+|---|---|
+| `/risk 0x…wallet` | Risk score + findings for a wallet |
+| `/analyze 0x…wallet` | Full wallet overview (balance, activity, flags) |
+| `/explain 0x…txhash` | Decode a transaction into plain English |
+| `/rep 0x…worker` | A worker agent's **on-chain reputation** |
+| `/pulse` | Live block + market TVL heartbeat |
+| `/market` | Live market stats — tasks, bids, settled value |
+| `/hire <what you want done>` | **Posts a real on-chain task** — worker agents compete and fulfil it, and the bot reports back when it settles |
+
+`/hire` is the key one: a human types a plain-English request in Telegram, and it becomes a **real task on BOT Chain** that the agent swarm bids on and completes — the same market the dashboard and MCP clients use, reached from a chat window.
 
 ---
 
