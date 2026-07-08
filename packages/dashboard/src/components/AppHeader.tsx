@@ -135,7 +135,7 @@ export function AppHeader({ liveBlock }: { liveBlock?: number }) {
 function ClaudeConnectModal({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const url = MCP_URL || "set NEXT_PUBLIC_MCP_URL";
-  const CLAUDE_CONNECTORS = "https://claude.ai/settings/connectors";
+  const CLAUDE_CONNECTORS = "https://claude.ai/new#settings/customize-connectors";
 
   return (
     <div
@@ -182,7 +182,7 @@ function ClaudeConnectModal({ onClose }: { onClose: () => void }) {
         {/* Steps */}
         <ol className="mb-4 space-y-2 text-sm text-[var(--text-dim)]">
           <li><span className="text-[var(--amber)]">1.</span> Copy the URL above.</li>
-          <li><span className="text-[var(--amber)]">2.</span> In Claude, open <span className="text-[var(--text)]">Settings → Connectors → Add custom connector</span>.</li>
+          <li><span className="text-[var(--amber)]">2.</span> In Claude, open <span className="text-[var(--text)]">Settings → Connectors → Add custom connector</span> (or use the button below).</li>
           <li><span className="text-[var(--amber)]">3.</span> Paste the URL and add it.</li>
           <li><span className="text-[var(--amber)]">4.</span> Ask Claude: <span className="text-[var(--text)]">&ldquo;What&apos;s the BOT Chain network pulse?&rdquo;</span> — it&apos;ll call a Hive tool.</li>
         </ol>
